@@ -1,0 +1,33 @@
+{
+  "name": "reforma-casa-nova",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "wrangler pages dev dist",
+    "db:migrate:local": "wrangler d1 execute reforma-casa-nova-db --local --file=./server/db/schema.sql",
+    "db:seed:local": "node scripts/seed.js > /tmp/reforma-seed.sql && wrangler d1 execute reforma-casa-nova-db --local --file=/tmp/reforma-seed.sql",
+    "db:migrate:remote": "wrangler d1 execute reforma-casa-nova-db --remote --file=./server/db/schema.sql",
+    "db:seed:remote": "node scripts/seed.js > /tmp/reforma-seed.sql && wrangler d1 execute reforma-casa-nova-db --remote --file=/tmp/reforma-seed.sql",
+    "setup:local": "npm run db:migrate:local && npm run db:seed:local"
+  },
+  "dependencies": {
+    "hono": "^4.12.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260307.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "wrangler": "^4.71.0"
+  }
+}

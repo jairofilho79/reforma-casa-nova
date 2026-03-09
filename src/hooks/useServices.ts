@@ -1,0 +1,65 @@
+import { useState, useEffect, useCallback } from 'react'
+import { api } from '../lib/api'
+import type { Service } from '@server/types'
+
+export function useServices() {
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchServices = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await api.get<Service[]>('/services')
+      setServices(data)
+      setError(null)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchServices()
+  }, [fetchServices])
+
+  const createService = async (data: { name: string; materials_description?: string; service_cost?: number }) => {
+    const service = await api.post<Service>('/services', data)
+    setServices(prev => [...prev, service])
+    return service
+  }
+
+  const updateService = async (id: number, data: Partial<Service>) => {
+    const updated = await api.put<Service>(`/services/${id}`, data)
+    setServices(prev => prev.map(s => s.id === id ? updated : s))
+    return updated
+  }
+
+  const deleteService = async (id: number) => {
+    await api.delete(`/services/${id}`)
+    setServices(prev => prev.filter(s => s.id !== id))
+  }
+
+  const toggleSelected = async (id: number) => {
+    const updated = await api.patch<Service>(`/services/${id}/toggle`)
+    setServices(prev => prev.map(s => s.id === id ? updated : s))
+  }
+
+  const updateStatus = async (id: number, status: string) => {
+    const updated = await api.patch<Service>(`/services/${id}/status`, { status })
+    setServices(prev => prev.map(s => s.id === id ? updated : s))
+  }
+
+  return {
+    services,
+    loading,
+    error,
+    fetchServices,
+    createService,
+    updateService,
+    deleteService,
+    toggleSelected,
+    updateStatus,
+  }
+}
