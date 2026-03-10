@@ -22,8 +22,8 @@ dashboard.get('/', async (c) => {
       SELECT
         COUNT(*) as total_items,
         SUM(CASE WHEN purchased = 1 THEN 1 ELSE 0 END) as purchased_count,
-        SUM(estimated_price) as total_estimated,
-        SUM(CASE WHEN purchased = 1 AND actual_price IS NOT NULL THEN actual_price ELSE 0 END) as total_actual
+        SUM(estimated_price * quantity) as total_estimated,
+        SUM(CASE WHEN purchased = 1 AND actual_price IS NOT NULL THEN actual_price * quantity ELSE 0 END) as total_actual
       FROM shopping_items
     `).first(),
   ])

@@ -150,14 +150,14 @@ export function ServiceDetailPage() {
                     {item.purchased ? '✓' : ''}
                   </span>
                   <span className={`text-base ${item.purchased ? 'line-through text-text-secondary' : 'text-text-primary'}`}>
-                    {item.name}
+                    {item.quantity > 1 ? `${item.quantity}x ` : ''}{item.name}
                   </span>
                 </div>
                 <div className="text-right">
                   {item.actual_price !== null ? (
-                    <span className="text-base font-semibold text-success">{formatCurrency(item.actual_price)}</span>
+                    <span className="text-base font-semibold text-success">{formatCurrency(item.actual_price * item.quantity)}</span>
                   ) : (
-                    <span className="text-sm text-text-secondary">{formatCurrency(item.estimated_price)}</span>
+                    <span className="text-sm text-text-secondary">{formatCurrency(item.estimated_price * item.quantity)}</span>
                   )}
                 </div>
               </div>

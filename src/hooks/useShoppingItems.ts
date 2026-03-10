@@ -25,7 +25,7 @@ export function useShoppingItems(serviceId?: number) {
     fetchItems()
   }, [fetchItems])
 
-  const createItem = async (data: { service_id?: number; name: string; estimated_price?: number }) => {
+  const createItem = async (data: { service_id?: number; name: string; quantity?: number; estimated_price?: number }) => {
     const item = await api.post<ShoppingItem>('/shopping', data)
     setItems(prev => [...prev, item])
     return item

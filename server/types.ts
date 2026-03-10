@@ -25,6 +25,7 @@ export type ShoppingItem = {
   service_id: number | null
   service_name?: string
   name: string
+  quantity: number
   estimated_price: number
   actual_price: number | null
   purchased: number

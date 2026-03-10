@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS shopping_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   service_id INTEGER,
   name TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
   estimated_price REAL NOT NULL DEFAULT 0,
   actual_price REAL,
   purchased INTEGER NOT NULL DEFAULT 0,

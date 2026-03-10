@@ -8,8 +8,8 @@ shopping.get('/summary', async (c) => {
     SELECT
       COUNT(*) as total_items,
       SUM(CASE WHEN purchased = 1 THEN 1 ELSE 0 END) as purchased_count,
-      SUM(estimated_price) as total_estimated,
-      SUM(CASE WHEN actual_price IS NOT NULL THEN actual_price ELSE 0 END) as total_actual
+      SUM(estimated_price * quantity) as total_estimated,
+      SUM(CASE WHEN actual_price IS NOT NULL THEN actual_price * quantity ELSE 0 END) as total_actual
     FROM shopping_items
   `).first()
 
@@ -40,6 +40,7 @@ shopping.post('/', async (c) => {
   const body = await c.req.json<{
     service_id?: number
     name: string
+    quantity?: number
     estimated_price?: number
   }>()
 
@@ -48,11 +49,12 @@ shopping.post('/', async (c) => {
   }
 
   const result = await c.env.DB.prepare(
-    `INSERT INTO shopping_items (service_id, name, estimated_price)
-     VALUES (?, ?, ?)`
+    `INSERT INTO shopping_items (service_id, name, quantity, estimated_price)
+     VALUES (?, ?, ?, ?)`
   ).bind(
     body.service_id || null,
     body.name,
+    body.quantity || 1,
     body.estimated_price || 0
   ).run()
 
@@ -71,6 +73,7 @@ shopping.put('/:id', async (c) => {
   const body = await c.req.json<{
     service_id?: number | null
     name?: string
+    quantity?: number
     estimated_price?: number
     actual_price?: number | null
     purchased?: boolean
@@ -90,6 +93,7 @@ shopping.put('/:id', async (c) => {
     `UPDATE shopping_items SET
       service_id = ?,
       name = ?,
+      quantity = ?,
       estimated_price = ?,
       actual_price = ?,
       purchased = ?,
@@ -98,6 +102,7 @@ shopping.put('/:id', async (c) => {
   ).bind(
     body.service_id !== undefined ? body.service_id : ex.service_id,
     body.name ?? ex.name,
+    body.quantity ?? ex.quantity,
     body.estimated_price ?? ex.estimated_price,
     body.actual_price !== undefined ? body.actual_price : ex.actual_price,
     body.purchased !== undefined ? (body.purchased ? 1 : 0) : ex.purchased,
