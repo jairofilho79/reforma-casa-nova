@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../lib/api'
+import { useMudanca } from '../context/MudancaContext'
 
 export type DashboardData = {
   budget: {
@@ -27,14 +28,16 @@ export type DashboardData = {
 }
 
 export function useDashboard() {
+  const { activeMudanca } = useMudanca()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchDashboard = useCallback(async () => {
+    if (!activeMudanca) return
     try {
       setLoading(true)
-      const result = await api.get<DashboardData>('/dashboard')
+      const result = await api.get<DashboardData>(`/dashboard?mudanca_id=${activeMudanca.id}`)
       setData(result)
       setError(null)
     } catch (e) {
@@ -42,7 +45,7 @@ export function useDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeMudanca?.id])
 
   useEffect(() => {
     fetchDashboard()

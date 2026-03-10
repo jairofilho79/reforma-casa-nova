@@ -4,6 +4,11 @@ import type { Bindings, Variables } from '../types'
 const dashboard = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 dashboard.get('/', async (c) => {
+  const mudancaId = c.req.query('mudanca_id')
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  }
+
   const [serviceSummary, shoppingSummary] = await Promise.all([
     c.env.DB.prepare(`
       SELECT
@@ -16,7 +21,8 @@ dashboard.get('/', async (c) => {
         SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count,
         SUM(time_spent_hours) as total_hours
       FROM services
-    `).first(),
+      WHERE mudanca_id = ?
+    `).bind(mudancaId).first(),
 
     c.env.DB.prepare(`
       SELECT
@@ -25,7 +31,8 @@ dashboard.get('/', async (c) => {
         SUM(estimated_price * quantity) as total_estimated,
         SUM(CASE WHEN purchased = 1 AND actual_price IS NOT NULL THEN actual_price * quantity ELSE 0 END) as total_actual
       FROM shopping_items
-    `).first(),
+      WHERE mudanca_id = ?
+    `).bind(mudancaId).first(),
   ])
 
   const ss = serviceSummary as Record<string, number>

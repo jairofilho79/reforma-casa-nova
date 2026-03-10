@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../lib/api'
+import { useMudanca } from '../context/MudancaContext'
 import type { Service } from '@server/types'
 
 export function useServices() {
+  const { activeMudanca } = useMudanca()
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchServices = useCallback(async () => {
+    if (!activeMudanca) return
     try {
       setLoading(true)
-      const data = await api.get<Service[]>('/services')
+      const data = await api.get<Service[]>(`/services?mudanca_id=${activeMudanca.id}`)
       setServices(data)
       setError(null)
     } catch (e) {
@@ -18,14 +21,15 @@ export function useServices() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeMudanca?.id])
 
   useEffect(() => {
     fetchServices()
   }, [fetchServices])
 
   const createService = async (data: { name: string; materials_description?: string; service_cost?: number }) => {
-    const service = await api.post<Service>('/services', data)
+    if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
+    const service = await api.post<Service>('/services', { ...data, mudanca_id: activeMudanca.id })
     setServices(prev => [...prev, service])
     return service
   }

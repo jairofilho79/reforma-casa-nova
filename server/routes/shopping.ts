@@ -4,6 +4,11 @@ import type { Bindings, Variables } from '../types'
 const shopping = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 shopping.get('/summary', async (c) => {
+  const mudancaId = c.req.query('mudanca_id')
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  }
+
   const result = await c.env.DB.prepare(`
     SELECT
       COUNT(*) as total_items,
@@ -11,28 +16,35 @@ shopping.get('/summary', async (c) => {
       SUM(estimated_price * quantity) as total_estimated,
       SUM(CASE WHEN actual_price IS NOT NULL THEN actual_price * quantity ELSE 0 END) as total_actual
     FROM shopping_items
-  `).first()
+    WHERE mudanca_id = ?
+  `).bind(mudancaId).first()
 
   return c.json(result)
 })
 
 shopping.get('/', async (c) => {
+  const mudancaId = c.req.query('mudanca_id')
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  }
+
   const serviceId = c.req.query('service_id')
 
   let query = `
     SELECT si.*, s.name as service_name
     FROM shopping_items si
     LEFT JOIN services s ON si.service_id = s.id
+    WHERE si.mudanca_id = ?
   `
 
   if (serviceId) {
-    query += ` WHERE si.service_id = ? ORDER BY si.id ASC`
-    const { results } = await c.env.DB.prepare(query).bind(serviceId).all()
+    query += ` AND si.service_id = ? ORDER BY si.id ASC`
+    const { results } = await c.env.DB.prepare(query).bind(mudancaId, serviceId).all()
     return c.json(results)
   }
 
   query += ` ORDER BY si.purchased ASC, si.id ASC`
-  const { results } = await c.env.DB.prepare(query).all()
+  const { results } = await c.env.DB.prepare(query).bind(mudancaId).all()
   return c.json(results)
 })
 
@@ -54,6 +66,7 @@ shopping.get('/:id', async (c) => {
 
 shopping.post('/', async (c) => {
   const body = await c.req.json<{
+    mudanca_id: number
     service_id?: number
     name: string
     quantity?: number
@@ -64,10 +77,15 @@ shopping.post('/', async (c) => {
     return c.json({ error: 'Nome é obrigatório' }, 400)
   }
 
+  if (!body.mudanca_id) {
+    return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  }
+
   const result = await c.env.DB.prepare(
-    `INSERT INTO shopping_items (service_id, name, quantity, estimated_price)
-     VALUES (?, ?, ?, ?)`
+    `INSERT INTO shopping_items (mudanca_id, service_id, name, quantity, estimated_price)
+     VALUES (?, ?, ?, ?, ?)`
   ).bind(
+    body.mudanca_id,
     body.service_id || null,
     body.name,
     body.quantity || 1,

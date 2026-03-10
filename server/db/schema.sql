@@ -6,8 +6,15 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS mudancas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS services (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mudanca_id INTEGER NOT NULL DEFAULT 1,
   name TEXT NOT NULL,
   materials_description TEXT NOT NULL DEFAULT '',
   service_cost REAL NOT NULL DEFAULT 0,
@@ -15,11 +22,13 @@ CREATE TABLE IF NOT EXISTS services (
   selected INTEGER NOT NULL DEFAULT 1,
   time_spent_hours REAL NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (mudanca_id) REFERENCES mudancas(id)
 );
 
 CREATE TABLE IF NOT EXISTS shopping_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mudanca_id INTEGER NOT NULL DEFAULT 1,
   service_id INTEGER,
   name TEXT NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
@@ -28,8 +37,11 @@ CREATE TABLE IF NOT EXISTS shopping_items (
   purchased INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (mudanca_id) REFERENCES mudancas(id),
   FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_services_mudanca ON services(mudanca_id);
+CREATE INDEX IF NOT EXISTS idx_shopping_mudanca ON shopping_items(mudanca_id);
 CREATE INDEX IF NOT EXISTS idx_shopping_service ON shopping_items(service_id);
 CREATE INDEX IF NOT EXISTS idx_services_status ON services(status);

@@ -8,8 +8,15 @@ export type Variables = {
   username: string
 }
 
+export type Mudanca = {
+  id: number
+  name: string
+  created_at: string
+}
+
 export type Service = {
   id: number
+  mudanca_id: number
   name: string
   materials_description: string
   service_cost: number
@@ -22,6 +29,7 @@ export type Service = {
 
 export type ShoppingItem = {
   id: number
+  mudanca_id: number
   service_id: number | null
   service_name?: string
   name: string

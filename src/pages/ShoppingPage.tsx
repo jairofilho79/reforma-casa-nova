@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useShoppingItems } from '../hooks/useShoppingItems'
+import { useMudanca } from '../context/MudancaContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -12,6 +13,7 @@ import type { Service } from '@server/types'
 export function ShoppingPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { activeMudanca } = useMudanca()
   const [filterServiceId, setFilterServiceId] = useState<number | undefined>()
   const { items, loading, togglePurchased, createItem } = useShoppingItems(filterServiceId)
   const [services, setServices] = useState<Service[]>([])
@@ -28,8 +30,10 @@ export function ShoppingPage() {
   const addFormRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    api.get<Service[]>('/services').then(setServices).catch(() => {})
-  }, [])
+    if (activeMudanca) {
+      api.get<Service[]>(`/services?mudanca_id=${activeMudanca.id}`).then(setServices).catch(() => {})
+    }
+  }, [activeMudanca?.id])
 
   const toggleOnlyPending = () => {
     setOnlyPending(prev => {

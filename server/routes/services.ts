@@ -4,6 +4,11 @@ import type { Bindings, Variables } from '../types'
 const services = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 services.get('/summary', async (c) => {
+  const mudancaId = c.req.query('mudanca_id')
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  }
+
   const result = await c.env.DB.prepare(`
     SELECT
       COUNT(*) as total_services,
@@ -15,15 +20,21 @@ services.get('/summary', async (c) => {
       SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count,
       SUM(time_spent_hours) as total_hours
     FROM services
-  `).first()
+    WHERE mudanca_id = ?
+  `).bind(mudancaId).first()
 
   return c.json(result)
 })
 
 services.get('/', async (c) => {
+  const mudancaId = c.req.query('mudanca_id')
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  }
+
   const { results } = await c.env.DB.prepare(
-    'SELECT * FROM services ORDER BY id ASC'
-  ).all()
+    'SELECT * FROM services WHERE mudanca_id = ? ORDER BY id ASC'
+  ).bind(mudancaId).all()
   return c.json(results)
 })
 
@@ -46,6 +57,7 @@ services.get('/:id', async (c) => {
 
 services.post('/', async (c) => {
   const body = await c.req.json<{
+    mudanca_id: number
     name: string
     materials_description?: string
     service_cost?: number
@@ -55,10 +67,15 @@ services.post('/', async (c) => {
     return c.json({ error: 'Nome é obrigatório' }, 400)
   }
 
+  if (!body.mudanca_id) {
+    return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  }
+
   const result = await c.env.DB.prepare(
-    `INSERT INTO services (name, materials_description, service_cost)
-     VALUES (?, ?, ?)`
+    `INSERT INTO services (mudanca_id, name, materials_description, service_cost)
+     VALUES (?, ?, ?, ?)`
   ).bind(
+    body.mudanca_id,
     body.name,
     body.materials_description || '',
     body.service_cost || 0

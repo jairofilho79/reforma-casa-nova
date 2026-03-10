@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import { useMudanca } from '../context/MudancaContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -11,6 +12,7 @@ import type { ShoppingItem, Service } from '@server/types'
 export function ShoppingItemDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { activeMudanca } = useMudanca()
   const [item, setItem] = useState<ShoppingItem | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,9 +28,10 @@ export function ShoppingItemDetailPage() {
   const [purchased, setPurchased] = useState(false)
 
   useEffect(() => {
+    if (!activeMudanca) return
     Promise.all([
       api.get<ShoppingItem>(`/shopping/${id}`),
-      api.get<Service[]>('/services'),
+      api.get<Service[]>(`/services?mudanca_id=${activeMudanca.id}`),
     ])
       .then(([data, svcs]) => {
         setItem(data)
@@ -42,7 +45,7 @@ export function ShoppingItemDetailPage() {
       })
       .catch(() => navigate('/shopping', { replace: true }))
       .finally(() => setLoading(false))
-  }, [id, navigate])
+  }, [id, navigate, activeMudanca?.id])
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
