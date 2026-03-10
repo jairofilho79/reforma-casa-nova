@@ -77,34 +77,29 @@ export function DashboardPage() {
         </div>
       </Card>
 
-      {/* Shopping Summary */}
+      {/* Shopping & Materials */}
       <Card>
-        <h3 className="text-lg font-bold text-text-primary mb-2">Lista de Compras</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="text-center">
+        <h3
+          className="text-lg font-bold text-text-primary mb-2 cursor-pointer"
+          onClick={() => navigate('/shopping')}
+        >
+          Lista de Compras
+        </h3>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="text-center cursor-pointer" onClick={() => navigate('/shopping')}>
             <p className="text-xl font-bold text-primary">{data.shopping.purchased}</p>
             <p className="text-sm text-text-secondary">Comprados</p>
           </div>
-          <div className="text-center">
+          <div className="text-center cursor-pointer" onClick={() => navigate('/shopping?pending=true')}>
             <p className="text-xl font-bold text-warning">{data.shopping.pending}</p>
             <p className="text-sm text-text-secondary">Pendentes</p>
           </div>
         </div>
-      </Card>
-
-      {/* Hours */}
-      {data.progress.total_hours > 0 && (
-        <Card>
-          <h3 className="text-lg font-bold text-text-primary mb-1">Tempo Total</h3>
-          <p className="text-2xl font-bold text-primary">{formatHours(data.progress.total_hours)}</p>
-        </Card>
-      )}
-
-      {/* Materials estimate vs actual */}
-      {data.budget.total_estimated_materials > 0 && (
-        <Card>
-          <h3 className="text-lg font-bold text-text-primary mb-2">Materiais</h3>
-          <div className="grid grid-cols-2 gap-3">
+        {data.budget.total_estimated_materials > 0 && (
+          <div
+            className="grid grid-cols-2 gap-3 pt-3 border-t border-border cursor-pointer"
+            onClick={() => navigate('/shopping')}
+          >
             <div>
               <p className="text-sm text-text-secondary">Estimado</p>
               <p className="text-lg font-bold text-text-primary">{formatCurrency(data.budget.total_estimated_materials)}</p>
@@ -114,6 +109,14 @@ export function DashboardPage() {
               <p className="text-lg font-bold text-text-primary">{formatCurrency(data.budget.total_actual_materials)}</p>
             </div>
           </div>
+        )}
+      </Card>
+
+      {/* Hours */}
+      {data.progress.total_hours > 0 && (
+        <Card>
+          <h3 className="text-lg font-bold text-text-primary mb-1">Tempo Total</h3>
+          <p className="text-2xl font-bold text-primary">{formatHours(data.progress.total_hours)}</p>
         </Card>
       )}
     </div>

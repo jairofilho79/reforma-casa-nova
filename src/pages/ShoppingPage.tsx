@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useShoppingItems } from '../hooks/useShoppingItems'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -11,6 +11,7 @@ import type { Service } from '@server/types'
 
 export function ShoppingPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [filterServiceId, setFilterServiceId] = useState<number | undefined>()
   const { items, loading, togglePurchased, createItem } = useShoppingItems(filterServiceId)
   const [services, setServices] = useState<Service[]>([])
@@ -20,7 +21,10 @@ export function ShoppingPage() {
   const [newEstimated, setNewEstimated] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
   const [newServiceId, setNewServiceId] = useState('')
-  const [onlyPending, setOnlyPending] = useState(() => localStorage.getItem('shopping_only_pending') === 'true')
+  const [onlyPending, setOnlyPending] = useState(() => {
+    if (searchParams.get('pending') === 'true') return true
+    return localStorage.getItem('shopping_only_pending') === 'true'
+  })
   const addFormRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
