@@ -17,17 +17,27 @@ export function ShoppingPage() {
   const [addLoading, setAddLoading] = useState(false)
   const [newName, setNewName] = useState('')
   const [newEstimated, setNewEstimated] = useState('')
+  const [newQuantity, setNewQuantity] = useState('1')
   const [newServiceId, setNewServiceId] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editPrice, setEditPrice] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const [onlyPending, setOnlyPending] = useState(() => localStorage.getItem('shopping_only_pending') === 'true')
 
   useEffect(() => {
     api.get<Service[]>('/services').then(setServices).catch(() => {})
   }, [])
 
-  const totalEstimated = items.reduce((sum, i) => sum + i.estimated_price, 0)
-  const totalActual = items.reduce((sum, i) => sum + (i.actual_price || 0), 0)
+  const toggleOnlyPending = () => {
+    setOnlyPending(prev => {
+      const next = !prev
+      localStorage.setItem('shopping_only_pending', String(next))
+      return next
+    })
+  }
+
+  const totalEstimated = items.reduce((sum, i) => sum + i.estimated_price * i.quantity, 0)
+  const totalActual = items.reduce((sum, i) => sum + (i.actual_price || 0) * i.quantity, 0)
   const purchasedCount = items.filter(i => i.purchased).length
 
   const handleAdd = async () => {
@@ -36,11 +46,13 @@ export function ShoppingPage() {
     try {
       await createItem({
         name: newName.trim(),
+        quantity: parseInt(newQuantity) || 1,
         estimated_price: parseFloat(newEstimated) || 0,
         service_id: newServiceId ? parseInt(newServiceId) : undefined,
       })
       setNewName('')
       setNewEstimated('')
+      setNewQuantity('1')
       setNewServiceId('')
       setShowAdd(false)
     } finally {
@@ -103,15 +115,44 @@ export function ShoppingPage() {
         />
       )}
 
+      {/* Filter chip */}
+      <button
+        onClick={toggleOnlyPending}
+        className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-colors ${
+          onlyPending
+            ? 'bg-primary border-primary text-white'
+            : 'bg-transparent border-primary text-primary'
+        }`}
+      >
+        A comprar
+      </button>
+
       {/* Items */}
-      {items.length === 0 ? (
-        <Card>
-          <p className="text-center text-text-secondary text-base py-4">
-            Nenhum item na lista de compras.
-          </p>
-        </Card>
-      ) : (
-        items.map(item => (
+      {(() => {
+        const sorted = [...items].sort((a, b) => Number(a.purchased) - Number(b.purchased))
+        const filtered = sorted.filter(item => !onlyPending || !item.purchased)
+
+        if (items.length === 0) {
+          return (
+            <Card>
+              <p className="text-center text-text-secondary text-base py-4">
+                Nenhum item na lista de compras.
+              </p>
+            </Card>
+          )
+        }
+
+        if (filtered.length === 0) {
+          return (
+            <Card>
+              <p className="text-center text-text-secondary text-base py-4">
+                Não há materiais a comprar.
+              </p>
+            </Card>
+          )
+        }
+
+        return filtered.map(item => (
           <Card key={item.id}>
             <div className="flex items-start gap-3">
               {/* Purchase checkbox */}
@@ -131,18 +172,18 @@ export function ShoppingPage() {
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <h3 className={`text-base font-bold ${item.purchased ? 'line-through text-text-secondary' : 'text-text-primary'}`}>
-                  {item.name}
+                  {item.quantity > 1 ? `${item.quantity}x ` : ''}{item.name}
                 </h3>
-                {item.service_name && (
-                  <p className="text-sm text-text-secondary">{item.service_name}</p>
-                )}
+                <p className="text-sm text-text-secondary">
+                  {item.service_name || 'Avulso'}
+                </p>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-sm text-text-secondary">
-                    Est: {formatCurrency(item.estimated_price)}
+                    Est: {formatCurrency(item.estimated_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.estimated_price * item.quantity)}` : ''}
                   </span>
                   {item.actual_price !== null ? (
                     <span className="text-base font-bold text-success">
-                      Real: {formatCurrency(item.actual_price)}
+                      Real: {formatCurrency(item.actual_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.actual_price * item.quantity)}` : ''}
                     </span>
                   ) : editingId === item.id ? (
                     <div className="flex items-center gap-1">
@@ -181,7 +222,7 @@ export function ShoppingPage() {
             </div>
           </Card>
         ))
-      )}
+      })()}
 
       {/* Add Form */}
       {showAdd && (
@@ -189,7 +230,10 @@ export function ShoppingPage() {
           <h3 className="text-lg font-bold text-text-primary mb-3">Novo Item</h3>
           <div className="space-y-3">
             <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Tinta branca 18L" />
-            <Input label="Preço Estimado (R$)" type="number" value={newEstimated} onChange={e => setNewEstimated((e.target as HTMLInputElement).value)} placeholder="0.00" step="0.01" />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Quantidade" type="number" value={newQuantity} onChange={e => setNewQuantity((e.target as HTMLInputElement).value)} min="1" step="1" />
+              <Input label="Preço Unit. Estimado (R$)" type="number" value={newEstimated} onChange={e => setNewEstimated((e.target as HTMLInputElement).value)} placeholder="0.00" step="0.01" />
+            </div>
             {services.length > 0 && (
               <Select
                 label="Serviço"
