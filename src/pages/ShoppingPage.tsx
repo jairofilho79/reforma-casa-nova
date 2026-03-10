@@ -179,13 +179,9 @@ export function ShoppingPage() {
                   <span className="text-sm text-text-secondary">
                     Est: {formatCurrency(item.estimated_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.estimated_price * item.quantity)}` : ''}
                   </span>
-                  {item.actual_price !== null ? (
+                  {item.actual_price !== null && (
                     <span className="text-base font-bold text-success">
                       Real: {formatCurrency(item.actual_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.actual_price * item.quantity)}` : ''}
-                    </span>
-                  ) : (
-                    <span className="text-sm text-primary font-semibold">
-                      + Valor real
                     </span>
                   )}
                 </div>

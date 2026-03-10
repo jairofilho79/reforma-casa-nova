@@ -38,7 +38,7 @@ export function ShoppingItemDetailPage() {
         setName(data.name)
         setQuantity(String(data.quantity))
         setEstimatedPrice(String(data.estimated_price))
-        setActualPrice(data.actual_price !== null ? String(data.actual_price) : '')
+        setActualPrice(data.actual_price !== null ? String(data.actual_price) : (data.estimated_price ? String(data.estimated_price) : ''))
         setServiceId(data.service_id ? String(data.service_id) : '')
         setPurchased(!!data.purchased)
         setServices(svcs)
