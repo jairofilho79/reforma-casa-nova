@@ -97,7 +97,7 @@ export function DashboardPage() {
         </div>
         {data.budget.total_estimated_materials > 0 && (
           <div
-            className="grid grid-cols-2 gap-3 pt-3 border-t border-border cursor-pointer"
+            className="grid grid-cols-2 gap-3 pt-3 border-t border-border text-center cursor-pointer"
             onClick={() => navigate('/shopping')}
           >
             <div>
