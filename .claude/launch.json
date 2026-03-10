@@ -4,7 +4,7 @@
     {
       "name": "dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["wrangler", "pages", "dev", "--d1", "DB=reforma-casa-nova-db", "--port", "8788"],
+      "runtimeArgs": ["wrangler", "pages", "dev", "--port", "8788"],
       "port": 8788
     }
   ]
