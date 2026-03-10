@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../hooks/useDashboard'
 import { Card } from '../components/ui/Card'
 import { formatCurrency, formatHours } from '../lib/formatters'
 
 export function DashboardPage() {
   const { data, loading } = useDashboard()
+  const navigate = useNavigate()
 
   if (loading) {
     return (
@@ -44,26 +46,31 @@ export function DashboardPage() {
 
       {/* Progress */}
       <Card>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-bold text-text-primary">Progresso</h3>
-          <span className="text-xl font-bold text-primary">{data.progress.completion_percentage}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-          <div
-            className="bg-primary h-full rounded-full transition-all duration-500"
-            style={{ width: `${data.progress.completion_percentage}%` }}
-          />
+        <div
+          className="cursor-pointer"
+          onClick={() => navigate('/services')}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-bold text-text-primary">Progresso</h3>
+            <span className="text-xl font-bold text-primary">{data.progress.completion_percentage}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+            <div
+              className="bg-primary h-full rounded-full transition-all duration-500"
+              style={{ width: `${data.progress.completion_percentage}%` }}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-          <div>
+          <div className="cursor-pointer" onClick={() => navigate('/services?status=pending')}>
             <p className="text-xl font-bold text-warning">{data.progress.pending}</p>
             <p className="text-sm text-text-secondary">Pendentes</p>
           </div>
-          <div>
+          <div className="cursor-pointer" onClick={() => navigate('/services?status=in_progress')}>
             <p className="text-xl font-bold text-primary">{data.progress.in_progress}</p>
             <p className="text-sm text-text-secondary">Em Andamento</p>
           </div>
-          <div>
+          <div className="cursor-pointer" onClick={() => navigate('/services?status=completed')}>
             <p className="text-xl font-bold text-success">{data.progress.completed}</p>
             <p className="text-sm text-text-secondary">Concluídos</p>
           </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useServices } from '../hooks/useServices'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -17,6 +17,7 @@ const nextStatus: Record<string, string> = {
 export function ServicesPage() {
   const { services, loading, toggleSelected, updateStatus, createService, deleteService } = useServices()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [showAdd, setShowAdd] = useState(false)
   const [newName, setNewName] = useState('')
   const [newCost, setNewCost] = useState('')
@@ -24,7 +25,7 @@ export function ServicesPage() {
   const [addLoading, setAddLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || '')
 
   const filtered = services.filter(s => {
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false
