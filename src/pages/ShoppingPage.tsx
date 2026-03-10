@@ -61,7 +61,7 @@ export function ShoppingPage() {
   }
 
   const handleSavePrice = async (id: number) => {
-    await updateItem(id, { actual_price: parseFloat(editPrice) || 0 })
+    await updateItem(id, { actual_price: parseFloat(editPrice) || 0, purchased: true })
     setEditingId(null)
     setEditPrice('')
   }
