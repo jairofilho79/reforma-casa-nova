@@ -181,11 +181,7 @@ export function ShoppingPage() {
                   <span className="text-sm text-text-secondary">
                     Est: {formatCurrency(item.estimated_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.estimated_price * item.quantity)}` : ''}
                   </span>
-                  {item.actual_price !== null ? (
-                    <span className="text-base font-bold text-success">
-                      Real: {formatCurrency(item.actual_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.actual_price * item.quantity)}` : ''}
-                    </span>
-                  ) : editingId === item.id ? (
+                  {editingId === item.id ? (
                     <div className="flex items-center gap-1">
                       <input
                         type="number"
@@ -199,6 +195,13 @@ export function ShoppingPage() {
                       />
                       <Button size="sm" onClick={() => handleSavePrice(item.id)}>OK</Button>
                     </div>
+                  ) : item.actual_price !== null ? (
+                    <button
+                      onClick={() => { setEditingId(item.id); setEditPrice(String(item.actual_price)) }}
+                      className="text-base font-bold text-success hover:underline"
+                    >
+                      Real: {formatCurrency(item.actual_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.actual_price * item.quantity)}` : ''}
+                    </button>
                   ) : (
                     <button
                       onClick={() => { setEditingId(item.id); setEditPrice(String(item.estimated_price)) }}
