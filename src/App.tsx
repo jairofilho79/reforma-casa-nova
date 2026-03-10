@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { ServicesPage } from './pages/ServicesPage'
 import { ServiceDetailPage } from './pages/ServiceDetailPage'
 import { ShoppingPage } from './pages/ShoppingPage'
+import { ShoppingItemDetailPage } from './pages/ShoppingItemDetailPage'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/services/:id" element={<ServiceDetailPage />} />
             <Route path="/shopping" element={<ShoppingPage />} />
+            <Route path="/shopping/:id" element={<ShoppingItemDetailPage />} />
           </Route>
         </Routes>
       </AuthProvider>

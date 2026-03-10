@@ -36,6 +36,22 @@ shopping.get('/', async (c) => {
   return c.json(results)
 })
 
+shopping.get('/:id', async (c) => {
+  const id = c.req.param('id')
+  const item = await c.env.DB.prepare(
+    `SELECT si.*, s.name as service_name
+     FROM shopping_items si
+     LEFT JOIN services s ON si.service_id = s.id
+     WHERE si.id = ?`
+  ).bind(id).first()
+
+  if (!item) {
+    return c.json({ error: 'Item não encontrado' }, 404)
+  }
+
+  return c.json(item)
+})
+
 shopping.post('/', async (c) => {
   const body = await c.req.json<{
     service_id?: number

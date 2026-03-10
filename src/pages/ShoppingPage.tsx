@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useShoppingItems } from '../hooks/useShoppingItems'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
-import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { formatCurrency } from '../lib/formatters'
 import { api } from '../lib/api'
 import type { Service } from '@server/types'
 
 export function ShoppingPage() {
+  const navigate = useNavigate()
   const [filterServiceId, setFilterServiceId] = useState<number | undefined>()
-  const { items, loading, togglePurchased, createItem, updateItem, deleteItem } = useShoppingItems(filterServiceId)
+  const { items, loading, togglePurchased, createItem } = useShoppingItems(filterServiceId)
   const [services, setServices] = useState<Service[]>([])
   const [showAdd, setShowAdd] = useState(false)
   const [addLoading, setAddLoading] = useState(false)
@@ -19,9 +20,6 @@ export function ShoppingPage() {
   const [newEstimated, setNewEstimated] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
   const [newServiceId, setNewServiceId] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editPrice, setEditPrice] = useState('')
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [onlyPending, setOnlyPending] = useState(() => localStorage.getItem('shopping_only_pending') === 'true')
 
   useEffect(() => {
@@ -58,18 +56,6 @@ export function ShoppingPage() {
     } finally {
       setAddLoading(false)
     }
-  }
-
-  const handleSavePrice = async (id: number) => {
-    await updateItem(id, { actual_price: parseFloat(editPrice) || 0, purchased: true })
-    setEditingId(null)
-    setEditPrice('')
-  }
-
-  const handleDelete = async () => {
-    if (deleteConfirm === null) return
-    await deleteItem(deleteConfirm)
-    setDeleteConfirm(null)
   }
 
   if (loading) {
@@ -169,60 +155,37 @@ export function ShoppingPage() {
                 ) : null}
               </button>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
+              {/* Content - clickable to navigate to detail */}
+              <div
+                className="flex-1 min-w-0 cursor-pointer"
+                onClick={() => navigate(`/shopping/${item.id}`)}
+              >
                 <h3 className={`text-base font-bold ${item.purchased ? 'line-through text-text-secondary' : 'text-text-primary'}`}>
                   {item.quantity > 1 ? `${item.quantity}x ` : ''}{item.name}
                 </h3>
                 <p className="text-sm text-text-secondary">
                   {item.service_name || 'Avulso'}
                 </p>
-                <div className="flex items-center gap-3 mt-1">
+                <div className="flex flex-wrap items-center gap-3 mt-1">
                   <span className="text-sm text-text-secondary">
                     Est: {formatCurrency(item.estimated_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.estimated_price * item.quantity)}` : ''}
                   </span>
-                  {editingId === item.id ? (
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        className="w-24 border border-border rounded px-2 py-1 text-sm"
-                        value={editPrice}
-                        onChange={e => setEditPrice(e.target.value)}
-                        placeholder="0.00"
-                        step="0.01"
-                        autoFocus
-                        onFocus={e => e.target.select()}
-                      />
-                      <Button size="sm" onClick={() => handleSavePrice(item.id)}>OK</Button>
-                    </div>
-                  ) : item.actual_price !== null ? (
-                    <button
-                      onClick={() => { setEditingId(item.id); setEditPrice(String(item.actual_price)) }}
-                      className="text-base font-bold text-success hover:underline"
-                    >
+                  {item.actual_price !== null ? (
+                    <span className="text-base font-bold text-success">
                       Real: {formatCurrency(item.actual_price)}{item.quantity > 1 ? ` × ${item.quantity} = ${formatCurrency(item.actual_price * item.quantity)}` : ''}
-                    </button>
+                    </span>
                   ) : (
-                    <button
-                      onClick={() => { setEditingId(item.id); setEditPrice(String(item.estimated_price)) }}
-                      className="text-sm text-primary font-semibold hover:underline"
-                    >
+                    <span className="text-sm text-primary font-semibold">
                       + Valor real
-                    </button>
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* Delete */}
-              <button
-                onClick={() => setDeleteConfirm(item.id)}
-                className="p-1.5 text-text-secondary hover:text-danger transition-colors flex-shrink-0"
-                aria-label="Excluir"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                </svg>
-              </button>
+              {/* Chevron */}
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-text-secondary flex-shrink-0 mt-1">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+              </svg>
             </div>
           </Card>
         ))
@@ -269,15 +232,6 @@ export function ShoppingPage() {
           </svg>
         </button>
       )}
-
-      <ConfirmDialog
-        open={deleteConfirm !== null}
-        title="Excluir Item"
-        message="Tem certeza que deseja excluir este item da lista de compras?"
-        confirmLabel="Excluir"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteConfirm(null)}
-      />
     </div>
   )
 }
