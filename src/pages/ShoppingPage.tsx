@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useShoppingItems } from '../hooks/useShoppingItems'
 import { Card } from '../components/ui/Card'
@@ -21,6 +21,7 @@ export function ShoppingPage() {
   const [newQuantity, setNewQuantity] = useState('1')
   const [newServiceId, setNewServiceId] = useState('')
   const [onlyPending, setOnlyPending] = useState(() => localStorage.getItem('shopping_only_pending') === 'true')
+  const addFormRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     api.get<Service[]>('/services').then(setServices).catch(() => {})
@@ -194,27 +195,29 @@ export function ShoppingPage() {
       {/* Add Form */}
       {showAdd && (
         <Card>
-          <h3 className="text-lg font-bold text-text-primary mb-3">Novo Item</h3>
-          <div className="space-y-3">
-            <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Tinta branca 18L" />
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Quantidade" type="number" value={newQuantity} onChange={e => setNewQuantity((e.target as HTMLInputElement).value)} min="1" step="1" />
-              <Input label="Preço Unit. Estimado (R$)" type="number" value={newEstimated} onChange={e => setNewEstimated((e.target as HTMLInputElement).value)} placeholder="0.00" step="0.01" />
-            </div>
-            {services.length > 0 && (
-              <Select
-                label="Serviço"
-                value={newServiceId}
-                onChange={e => setNewServiceId(e.target.value)}
-                options={[
-                  { value: '', label: 'Nenhum (avulso)' },
-                  ...services.map(s => ({ value: String(s.id), label: s.name })),
-                ]}
-              />
-            )}
-            <div className="flex gap-3">
-              <Button variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>
-              <Button onClick={handleAdd} loading={addLoading} className="flex-1">Salvar</Button>
+          <div ref={addFormRef}>
+            <h3 className="text-lg font-bold text-text-primary mb-3">Novo Item</h3>
+            <div className="space-y-3">
+              <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Tinta branca 18L" />
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Quantidade" type="number" value={newQuantity} onChange={e => setNewQuantity((e.target as HTMLInputElement).value)} min="1" step="1" />
+                <Input label="Preço Unit. Estimado (R$)" type="number" value={newEstimated} onChange={e => setNewEstimated((e.target as HTMLInputElement).value)} placeholder="0.00" step="0.01" />
+              </div>
+              {services.length > 0 && (
+                <Select
+                  label="Serviço"
+                  value={newServiceId}
+                  onChange={e => setNewServiceId(e.target.value)}
+                  options={[
+                    { value: '', label: 'Nenhum (avulso)' },
+                    ...services.map(s => ({ value: String(s.id), label: s.name })),
+                  ]}
+                />
+              )}
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>
+                <Button onClick={handleAdd} loading={addLoading} className="flex-1">Salvar</Button>
+              </div>
             </div>
           </div>
         </Card>
@@ -223,7 +226,10 @@ export function ShoppingPage() {
       {/* FAB */}
       {!showAdd && (
         <button
-          onClick={() => setShowAdd(true)}
+          onClick={() => {
+            setShowAdd(true)
+            setTimeout(() => addFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+          }}
           className="fixed bottom-20 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary-hover transition-colors z-30"
           aria-label="Adicionar item"
         >
