@@ -23,8 +23,16 @@ export function ServicesPage() {
   const [newMaterials, setNewMaterials] = useState('')
   const [addLoading, setAddLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
 
-  const selectedTotal = services
+  const filtered = services.filter(s => {
+    if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterStatus && s.status !== filterStatus) return false
+    return true
+  })
+
+  const selectedTotal = filtered
     .filter(s => s.selected)
     .reduce((sum, s) => sum + s.service_cost, 0)
 
@@ -75,8 +83,44 @@ export function ServicesPage() {
         </div>
       </Card>
 
+      {/* Search */}
+      <Input
+        label="Pesquisar"
+        value={search}
+        onChange={e => setSearch((e.target as HTMLInputElement).value)}
+        placeholder="Buscar por nome..."
+      />
+
+      {/* Status Filter Chips */}
+      <div className="flex gap-2 flex-wrap">
+        {([
+          { value: '', label: 'Todos' },
+          { value: 'pending', label: 'Pendente' },
+          { value: 'in_progress', label: 'Em Andamento' },
+          { value: 'completed', label: 'Concluído' },
+        ] as const).map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setFilterStatus(opt.value)}
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-colors ${
+              filterStatus === opt.value
+                ? 'bg-primary border-primary text-white'
+                : 'bg-transparent border-primary text-primary'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       {/* Service Cards */}
-      {services.map(service => (
+      {filtered.length === 0 ? (
+        <Card>
+          <p className="text-center text-text-secondary text-base py-4">
+            Nenhum serviço encontrado.
+          </p>
+        </Card>
+      ) : filtered.map(service => (
         <Card key={service.id} className={`transition-opacity ${!service.selected ? 'opacity-60' : ''}`}>
           <div className="flex items-start gap-3">
             {/* Checkbox */}
