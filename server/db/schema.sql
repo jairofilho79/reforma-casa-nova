@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS services (
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'completed')),
   selected INTEGER NOT NULL DEFAULT 1,
   time_spent_hours REAL NOT NULL DEFAULT 0,
+  provider TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (mudanca_id) REFERENCES mudancas(id)
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS shopping_items (
   estimated_price REAL NOT NULL DEFAULT 0,
   actual_price REAL,
   purchased INTEGER NOT NULL DEFAULT 0,
+  supplier TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (mudanca_id) REFERENCES mudancas(id),

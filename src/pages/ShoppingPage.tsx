@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
+import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import { formatCurrency } from '../lib/formatters'
 import { api } from '../lib/api'
 import type { Service } from '@server/types'
@@ -23,6 +24,8 @@ export function ShoppingPage() {
   const [newEstimated, setNewEstimated] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
   const [newServiceId, setNewServiceId] = useState('')
+  const [newSupplier, setNewSupplier] = useState('')
+  const [suppliers, setSuppliers] = useState<string[]>([])
   const [onlyPending, setOnlyPending] = useState(() => {
     if (searchParams.get('pending') === 'true') return true
     return localStorage.getItem('shopping_only_pending') === 'true'
@@ -34,6 +37,10 @@ export function ShoppingPage() {
       api.get<Service[]>(`/services?mudanca_id=${activeMudanca.id}`).then(setServices).catch(() => {})
     }
   }, [activeMudanca?.id])
+
+  useEffect(() => {
+    api.get<string[]>('/shopping/suppliers').then(setSuppliers).catch(() => {})
+  }, [])
 
   const toggleOnlyPending = () => {
     setOnlyPending(prev => {
@@ -56,11 +63,13 @@ export function ShoppingPage() {
         quantity: parseInt(newQuantity) || 1,
         estimated_price: parseFloat(newEstimated) || 0,
         service_id: newServiceId ? parseInt(newServiceId) : undefined,
+        supplier: newSupplier.trim(),
       })
       setNewName('')
       setNewEstimated('')
       setNewQuantity('1')
       setNewServiceId('')
+      setNewSupplier('')
       setShowAdd(false)
     } finally {
       setAddLoading(false)
@@ -218,6 +227,13 @@ export function ShoppingPage() {
                   ]}
                 />
               )}
+              <AutocompleteInput
+                label="Fornecedor"
+                value={newSupplier}
+                suggestions={suppliers}
+                onChange={setNewSupplier}
+                placeholder="Ex: Leroy Merlin"
+              />
               <div className="flex gap-3">
                 <Button variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>
                 <Button onClick={handleAdd} loading={addLoading} className="flex-1">Salvar</Button>

@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import type { ShoppingItem, Service } from '@server/types'
 
 export function ShoppingItemDetailPage() {
@@ -25,7 +26,13 @@ export function ShoppingItemDetailPage() {
   const [estimatedPrice, setEstimatedPrice] = useState('')
   const [actualPrice, setActualPrice] = useState('')
   const [serviceId, setServiceId] = useState('')
+  const [supplier, setSupplier] = useState('')
+  const [suppliers, setSuppliers] = useState<string[]>([])
   const [purchased, setPurchased] = useState(false)
+
+  useEffect(() => {
+    api.get<string[]>('/shopping/suppliers').then(setSuppliers).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!activeMudanca) return
@@ -40,6 +47,7 @@ export function ShoppingItemDetailPage() {
         setEstimatedPrice(String(data.estimated_price))
         setActualPrice(data.actual_price !== null ? String(data.actual_price) : (data.estimated_price ? String(data.estimated_price) : ''))
         setServiceId(data.service_id ? String(data.service_id) : '')
+        setSupplier(data.supplier || '')
         setPurchased(!!data.purchased)
         setServices(svcs)
       })
@@ -58,6 +66,7 @@ export function ShoppingItemDetailPage() {
         estimated_price: parseFloat(estimatedPrice) || 0,
         actual_price: actualPrice.trim() !== '' ? parseFloat(actualPrice) || 0 : null,
         service_id: serviceId ? parseInt(serviceId) : null,
+        supplier: supplier.trim(),
         purchased,
       })
       setItem(prev => prev ? { ...prev, ...updated } : null)
@@ -141,6 +150,14 @@ export function ShoppingItemDetailPage() {
               ]}
             />
           )}
+
+          <AutocompleteInput
+            label="Fornecedor"
+            value={supplier}
+            suggestions={suppliers}
+            onChange={setSupplier}
+            placeholder="Ex: Leroy Merlin"
+          />
 
           {/* Purchased toggle */}
           <label className="flex items-center gap-3 cursor-pointer">

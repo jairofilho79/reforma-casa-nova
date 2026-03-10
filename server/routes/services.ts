@@ -38,6 +38,13 @@ services.get('/', async (c) => {
   return c.json(results)
 })
 
+services.get('/providers', async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT DISTINCT provider FROM services WHERE provider != '' ORDER BY provider ASC`
+  ).all()
+  return c.json(results.map((r: Record<string, unknown>) => r.provider as string))
+})
+
 services.get('/:id', async (c) => {
   const id = c.req.param('id')
   const service = await c.env.DB.prepare(
@@ -61,6 +68,7 @@ services.post('/', async (c) => {
     name: string
     materials_description?: string
     service_cost?: number
+    provider?: string
   }>()
 
   if (!body.name) {
@@ -72,13 +80,14 @@ services.post('/', async (c) => {
   }
 
   const result = await c.env.DB.prepare(
-    `INSERT INTO services (mudanca_id, name, materials_description, service_cost)
-     VALUES (?, ?, ?, ?)`
+    `INSERT INTO services (mudanca_id, name, materials_description, service_cost, provider)
+     VALUES (?, ?, ?, ?, ?)`
   ).bind(
     body.mudanca_id,
     body.name,
     body.materials_description || '',
-    body.service_cost || 0
+    body.service_cost || 0,
+    body.provider || ''
   ).run()
 
   const service = await c.env.DB.prepare(
@@ -97,6 +106,7 @@ services.put('/:id', async (c) => {
     status?: string
     selected?: boolean
     time_spent_hours?: number
+    provider?: string
   }>()
 
   const existing = await c.env.DB.prepare(
@@ -107,6 +117,8 @@ services.put('/:id', async (c) => {
     return c.json({ error: 'Serviço não encontrado' }, 404)
   }
 
+  const ex = existing as Record<string, unknown>
+
   await c.env.DB.prepare(
     `UPDATE services SET
       name = ?,
@@ -115,15 +127,17 @@ services.put('/:id', async (c) => {
       status = ?,
       selected = ?,
       time_spent_hours = ?,
+      provider = ?,
       updated_at = datetime('now')
     WHERE id = ?`
   ).bind(
-    body.name ?? (existing as Record<string, unknown>).name,
-    body.materials_description ?? (existing as Record<string, unknown>).materials_description,
-    body.service_cost ?? (existing as Record<string, unknown>).service_cost,
-    body.status ?? (existing as Record<string, unknown>).status,
-    body.selected !== undefined ? (body.selected ? 1 : 0) : (existing as Record<string, unknown>).selected,
-    body.time_spent_hours ?? (existing as Record<string, unknown>).time_spent_hours,
+    body.name ?? ex.name,
+    body.materials_description ?? ex.materials_description,
+    body.service_cost ?? ex.service_cost,
+    body.status ?? ex.status,
+    body.selected !== undefined ? (body.selected ? 1 : 0) : ex.selected,
+    body.time_spent_hours ?? ex.time_spent_hours,
+    body.provider ?? ex.provider,
     id
   ).run()
 

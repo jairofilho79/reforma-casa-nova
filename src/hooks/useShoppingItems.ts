@@ -29,7 +29,7 @@ export function useShoppingItems(serviceId?: number) {
     fetchItems()
   }, [fetchItems])
 
-  const createItem = async (data: { service_id?: number; name: string; quantity?: number; estimated_price?: number }) => {
+  const createItem = async (data: { service_id?: number; name: string; quantity?: number; estimated_price?: number; supplier?: string }) => {
     if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
     const item = await api.post<ShoppingItem>('/shopping', { ...data, mudanca_id: activeMudanca.id })
     setItems(prev => [...prev, item])

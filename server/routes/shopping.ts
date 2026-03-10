@@ -48,6 +48,13 @@ shopping.get('/', async (c) => {
   return c.json(results)
 })
 
+shopping.get('/suppliers', async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT DISTINCT supplier FROM shopping_items WHERE supplier != '' ORDER BY supplier ASC`
+  ).all()
+  return c.json(results.map((r: Record<string, unknown>) => r.supplier as string))
+})
+
 shopping.get('/:id', async (c) => {
   const id = c.req.param('id')
   const item = await c.env.DB.prepare(
@@ -71,6 +78,7 @@ shopping.post('/', async (c) => {
     name: string
     quantity?: number
     estimated_price?: number
+    supplier?: string
   }>()
 
   if (!body.name) {
@@ -82,14 +90,15 @@ shopping.post('/', async (c) => {
   }
 
   const result = await c.env.DB.prepare(
-    `INSERT INTO shopping_items (mudanca_id, service_id, name, quantity, estimated_price)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO shopping_items (mudanca_id, service_id, name, quantity, estimated_price, supplier)
+     VALUES (?, ?, ?, ?, ?, ?)`
   ).bind(
     body.mudanca_id,
     body.service_id || null,
     body.name,
     body.quantity || 1,
-    body.estimated_price || 0
+    body.estimated_price || 0,
+    body.supplier || ''
   ).run()
 
   const item = await c.env.DB.prepare(
@@ -111,6 +120,7 @@ shopping.put('/:id', async (c) => {
     estimated_price?: number
     actual_price?: number | null
     purchased?: boolean
+    supplier?: string
   }>()
 
   const existing = await c.env.DB.prepare(
@@ -131,6 +141,7 @@ shopping.put('/:id', async (c) => {
       estimated_price = ?,
       actual_price = ?,
       purchased = ?,
+      supplier = ?,
       updated_at = datetime('now')
     WHERE id = ?`
   ).bind(
@@ -140,6 +151,7 @@ shopping.put('/:id', async (c) => {
     body.estimated_price ?? ex.estimated_price,
     body.actual_price !== undefined ? body.actual_price : ex.actual_price,
     body.purchased !== undefined ? (body.purchased ? 1 : 0) : ex.purchased,
+    body.supplier ?? ex.supplier,
     id
   ).run()
 

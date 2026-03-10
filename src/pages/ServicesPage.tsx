@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useServices } from '../hooks/useServices'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { StatusBadge } from '../components/ui/StatusBadge'
+import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { formatCurrency } from '../lib/formatters'
+import { api } from '../lib/api'
 
 const nextStatus: Record<string, string> = {
   pending: 'in_progress',
@@ -22,8 +24,14 @@ export function ServicesPage() {
   const [newName, setNewName] = useState('')
   const [newCost, setNewCost] = useState('')
   const [newMaterials, setNewMaterials] = useState('')
+  const [newProvider, setNewProvider] = useState('')
+  const [providers, setProviders] = useState<string[]>([])
   const [addLoading, setAddLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  useEffect(() => {
+    api.get<string[]>('/services/providers').then(setProviders).catch(() => {})
+  }, [])
+
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || '')
 
@@ -45,10 +53,12 @@ export function ServicesPage() {
         name: newName.trim(),
         service_cost: parseFloat(newCost) || 0,
         materials_description: newMaterials.trim(),
+        provider: newProvider.trim(),
       })
       setNewName('')
       setNewCost('')
       setNewMaterials('')
+      setNewProvider('')
       setShowAdd(false)
     } finally {
       setAddLoading(false)
@@ -177,6 +187,13 @@ export function ServicesPage() {
             <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Pintura da sala" />
             <Input label="Valor do Serviço (R$)" type="number" value={newCost} onChange={e => setNewCost((e.target as HTMLInputElement).value)} placeholder="0.00" step="0.01" />
             <Input label="Materiais" value={newMaterials} onChange={e => setNewMaterials((e.target as HTMLInputElement).value)} placeholder="Lista de materiais necessários" multiline />
+            <AutocompleteInput
+              label="Prestador"
+              value={newProvider}
+              suggestions={providers}
+              onChange={setNewProvider}
+              placeholder="Ex: João Pedreiro"
+            />
             <div className="flex gap-3">
               <Button variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>
               <Button onClick={handleAdd} loading={addLoading} className="flex-1">Salvar</Button>

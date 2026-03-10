@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import { formatCurrency } from '../lib/formatters'
 import type { Service, ShoppingItem } from '@server/types'
 
@@ -25,6 +26,12 @@ export function ServiceDetailPage() {
   const [cost, setCost] = useState('')
   const [status, setStatus] = useState('pending')
   const [timeSpent, setTimeSpent] = useState('')
+  const [provider, setProvider] = useState('')
+  const [providers, setProviders] = useState<string[]>([])
+
+  useEffect(() => {
+    api.get<string[]>('/services/providers').then(setProviders).catch(() => {})
+  }, [])
 
   useEffect(() => {
     api.get<ServiceWithItems>(`/services/${id}`)
@@ -35,6 +42,7 @@ export function ServiceDetailPage() {
         setCost(String(data.service_cost))
         setStatus(data.status)
         setTimeSpent(String(data.time_spent_hours))
+        setProvider(data.provider || '')
       })
       .catch(() => navigate('/services', { replace: true }))
       .finally(() => setLoading(false))
@@ -51,6 +59,7 @@ export function ServiceDetailPage() {
         service_cost: parseFloat(cost) || 0,
         status,
         time_spent_hours: parseFloat(timeSpent) || 0,
+        provider: provider.trim(),
       })
       setService(prev => prev ? { ...prev, ...updated } : null)
     } finally {
@@ -129,6 +138,14 @@ export function ServiceDetailPage() {
               { value: 'in_progress', label: 'Em Andamento' },
               { value: 'completed', label: 'Concluído' },
             ]}
+          />
+
+          <AutocompleteInput
+            label="Prestador"
+            value={provider}
+            suggestions={providers}
+            onChange={setProvider}
+            placeholder="Ex: João Pedreiro"
           />
 
           <div className="flex gap-3">

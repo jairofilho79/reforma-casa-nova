@@ -23,6 +23,7 @@ export type Service = {
   status: 'pending' | 'in_progress' | 'completed'
   selected: number
   time_spent_hours: number
+  provider: string
   created_at: string
   updated_at: string
 }
@@ -37,6 +38,7 @@ export type ShoppingItem = {
   estimated_price: number
   actual_price: number | null
   purchased: number
+  supplier: string
   created_at: string
   updated_at: string
 }
