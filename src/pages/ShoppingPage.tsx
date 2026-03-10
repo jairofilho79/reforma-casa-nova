@@ -195,12 +195,13 @@ export function ShoppingPage() {
                         placeholder="0.00"
                         step="0.01"
                         autoFocus
+                        onFocus={e => e.target.select()}
                       />
                       <Button size="sm" onClick={() => handleSavePrice(item.id)}>OK</Button>
                     </div>
                   ) : (
                     <button
-                      onClick={() => { setEditingId(item.id); setEditPrice('') }}
+                      onClick={() => { setEditingId(item.id); setEditPrice(String(item.estimated_price)) }}
                       className="text-sm text-primary font-semibold hover:underline"
                     >
                       + Valor real
