@@ -17,8 +17,7 @@ services.get('/summary', async (c) => {
       SUM(service_cost) as total_cost_all,
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_count,
       SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
-      SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count,
-      SUM(time_spent_hours) as total_hours
+      SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count
     FROM services
     WHERE mudanca_id = ?
   `).bind(mudancaId).first()
@@ -105,7 +104,8 @@ services.put('/:id', async (c) => {
     service_cost?: number
     status?: string
     selected?: boolean
-    time_spent_hours?: number
+    start_date?: string
+    end_date?: string
     provider?: string
   }>()
 
@@ -126,7 +126,8 @@ services.put('/:id', async (c) => {
       service_cost = ?,
       status = ?,
       selected = ?,
-      time_spent_hours = ?,
+      start_date = ?,
+      end_date = ?,
       provider = ?,
       updated_at = datetime('now')
     WHERE id = ?`
@@ -136,7 +137,8 @@ services.put('/:id', async (c) => {
     body.service_cost ?? ex.service_cost,
     body.status ?? ex.status,
     body.selected !== undefined ? (body.selected ? 1 : 0) : ex.selected,
-    body.time_spent_hours ?? ex.time_spent_hours,
+    body.start_date !== undefined ? body.start_date : ex.start_date,
+    body.end_date !== undefined ? body.end_date : ex.end_date,
     body.provider ?? ex.provider,
     id
   ).run()
@@ -178,15 +180,30 @@ services.patch('/:id/toggle', async (c) => {
 
 services.patch('/:id/status', async (c) => {
   const id = c.req.param('id')
-  const body = await c.req.json<{ status: string }>()
+  const body = await c.req.json<{ status: string; start_date?: string; end_date?: string }>()
 
   if (!['pending', 'in_progress', 'completed'].includes(body.status)) {
     return c.json({ error: 'Status inválido' }, 400)
   }
 
+  const existing = await c.env.DB.prepare(
+    'SELECT * FROM services WHERE id = ?'
+  ).bind(id).first()
+
+  if (!existing) {
+    return c.json({ error: 'Serviço não encontrado' }, 404)
+  }
+
+  const ex = existing as Record<string, unknown>
+
   await c.env.DB.prepare(
-    `UPDATE services SET status = ?, updated_at = datetime('now') WHERE id = ?`
-  ).bind(body.status, id).run()
+    `UPDATE services SET status = ?, start_date = ?, end_date = ?, updated_at = datetime('now') WHERE id = ?`
+  ).bind(
+    body.status,
+    body.start_date !== undefined ? body.start_date : ex.start_date,
+    body.end_date !== undefined ? body.end_date : ex.end_date,
+    id
+  ).run()
 
   const updated = await c.env.DB.prepare(
     'SELECT * FROM services WHERE id = ?'

@@ -22,7 +22,8 @@ export type Service = {
   service_cost: number
   status: 'pending' | 'in_progress' | 'completed'
   selected: number
-  time_spent_hours: number
+  start_date?: string
+  end_date?: string
   provider: string
   created_at: string
   updated_at: string

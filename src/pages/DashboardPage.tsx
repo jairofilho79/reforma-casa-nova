@@ -112,13 +112,6 @@ export function DashboardPage() {
         )}
       </Card>
 
-      {/* Hours */}
-      {data.progress.total_hours > 0 && (
-        <Card>
-          <h3 className="text-lg font-bold text-text-primary mb-1">Tempo Total</h3>
-          <p className="text-2xl font-bold text-primary">{formatHours(data.progress.total_hours)}</p>
-        </Card>
-      )}
     </div>
   )
 }

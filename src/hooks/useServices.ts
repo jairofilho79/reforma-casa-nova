@@ -50,8 +50,12 @@ export function useServices() {
     setServices(prev => prev.map(s => s.id === id ? updated : s))
   }
 
-  const updateStatus = async (id: number, status: string) => {
-    const updated = await api.patch<Service>(`/services/${id}/status`, { status })
+  const updateStatus = async (id: number, status: string, start_date?: string, end_date?: string) => {
+    const payload: { status: string; start_date?: string; end_date?: string } = { status }
+    if (start_date !== undefined) payload.start_date = start_date
+    if (end_date !== undefined) payload.end_date = end_date
+
+    const updated = await api.patch<Service>(`/services/${id}/status`, payload)
     setServices(prev => prev.map(s => s.id === id ? updated : s))
   }
 

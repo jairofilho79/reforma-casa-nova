@@ -25,12 +25,13 @@ export function ServiceDetailPage() {
   const [materials, setMaterials] = useState('')
   const [cost, setCost] = useState('')
   const [status, setStatus] = useState('pending')
-  const [timeSpent, setTimeSpent] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [provider, setProvider] = useState('')
   const [providers, setProviders] = useState<string[]>([])
 
   useEffect(() => {
-    api.get<string[]>('/services/providers').then(setProviders).catch(() => {})
+    api.get<string[]>('/services/providers').then(setProviders).catch(() => { })
   }, [])
 
   useEffect(() => {
@@ -41,7 +42,8 @@ export function ServiceDetailPage() {
         setMaterials(data.materials_description)
         setCost(String(data.service_cost))
         setStatus(data.status)
-        setTimeSpent(String(data.time_spent_hours))
+        setStartDate(data.start_date || '')
+        setEndDate(data.end_date || '')
         setProvider(data.provider || '')
       })
       .catch(() => navigate('/services', { replace: true }))
@@ -58,7 +60,8 @@ export function ServiceDetailPage() {
         materials_description: materials.trim(),
         service_cost: parseFloat(cost) || 0,
         status,
-        time_spent_hours: parseFloat(timeSpent) || 0,
+        start_date: startDate ? startDate : undefined,
+        end_date: endDate ? endDate : undefined,
         provider: provider.trim(),
       })
       setService(prev => prev ? { ...prev, ...updated } : null)
@@ -120,19 +123,35 @@ export function ServiceDetailPage() {
               min="0"
             />
             <Input
-              label="Tempo (horas)"
-              type="number"
-              value={timeSpent}
-              onChange={e => setTimeSpent((e.target as HTMLInputElement).value)}
-              step="0.5"
-              min="0"
+              label="Data Inicial"
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate((e.target as HTMLInputElement).value)}
+            />
+            <Input
+              label="Data Final"
+              type="date"
+              value={endDate}
+              onChange={e => setEndDate((e.target as HTMLInputElement).value)}
             />
           </div>
 
           <Select
             label="Status"
             value={status}
-            onChange={e => setStatus(e.target.value)}
+            onChange={e => {
+              const newStatus = e.target.value
+              setStatus(newStatus)
+              const now = new Date()
+              const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+              if (newStatus === 'in_progress' && !startDate) {
+                setStartDate(today)
+              }
+              if (newStatus === 'completed' && !endDate) {
+                setEndDate(today)
+              }
+            }}
             options={[
               { value: 'pending', label: 'Pendente' },
               { value: 'in_progress', label: 'Em Andamento' },

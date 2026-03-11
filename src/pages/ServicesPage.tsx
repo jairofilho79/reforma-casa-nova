@@ -29,7 +29,7 @@ export function ServicesPage() {
   const [addLoading, setAddLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   useEffect(() => {
-    api.get<string[]>('/services/providers').then(setProviders).catch(() => {})
+    api.get<string[]>('/services/providers').then(setProviders).catch(() => { })
   }, [])
 
   const [search, setSearch] = useState('')
@@ -113,11 +113,10 @@ export function ServicesPage() {
           <button
             key={opt.value}
             onClick={() => setFilterStatus(opt.value)}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-colors ${
-              filterStatus === opt.value
-                ? 'bg-primary border-primary text-white'
-                : 'bg-transparent border-primary text-primary'
-            }`}
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-colors ${filterStatus === opt.value
+              ? 'bg-primary border-primary text-white'
+              : 'bg-transparent border-primary text-primary'
+              }`}
           >
             {opt.label}
           </button>
@@ -156,7 +155,21 @@ export function ServicesPage() {
                 <h3 className="text-base font-bold text-text-primary truncate">{service.name}</h3>
                 <StatusBadge
                   status={service.status}
-                  onClick={() => updateStatus(service.id, nextStatus[service.status])}
+                  onClick={() => {
+                    const newStatus = nextStatus[service.status]
+                    let startDate = service.start_date
+                    let endDate = service.end_date
+                    const now = new Date()
+                    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+                    if (newStatus === 'in_progress' && !startDate) {
+                      startDate = today
+                    }
+                    if (newStatus === 'completed' && !endDate) {
+                      endDate = today
+                    }
+                    updateStatus(service.id, newStatus, startDate, endDate)
+                  }}
                 />
               </div>
               <p className="text-lg font-bold text-primary mt-1">{formatCurrency(service.service_cost)}</p>
