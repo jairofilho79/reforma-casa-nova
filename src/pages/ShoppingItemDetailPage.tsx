@@ -5,6 +5,7 @@ import { useMudanca } from '../context/MudancaContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { MoneyInput } from '../components/ui/MoneyInput'
 import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { AutocompleteInput } from '../components/ui/AutocompleteInput'
@@ -122,13 +123,10 @@ export function ShoppingItemDetailPage() {
               min="1"
               step="1"
             />
-            <Input
-              label="Preço Unit. Estimado (R$)"
-              type="number"
+            <MoneyInput
+              label="Preço Unit. Estimado"
               value={estimatedPrice}
-              onChange={e => setEstimatedPrice((e.target as HTMLInputElement).value)}
-              step="0.01"
-              min="0"
+              onChange={setEstimatedPrice}
             />
           </div>
 
@@ -187,13 +185,10 @@ export function ShoppingItemDetailPage() {
                   onChange={e => setPurchaseDate((e.target as HTMLInputElement).value)}
                   required={purchased}
                 />
-                <Input
-                  label="Preço Unit. Real (R$)"
-                  type="number"
+                <MoneyInput
+                  label="Preço Unit. Real"
                   value={actualPrice}
-                  onChange={e => setActualPrice((e.target as HTMLInputElement).value)}
-                  step="0.01"
-                  min="0"
+                  onChange={setActualPrice}
                   required={purchased}
                   placeholder="0.00"
                 />

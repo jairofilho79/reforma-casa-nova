@@ -5,6 +5,7 @@ import { useMudanca } from '../context/MudancaContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { MoneyInput } from '../components/ui/MoneyInput'
 import { Select } from '../components/ui/Select'
 import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import { formatCurrency } from '../lib/formatters'
@@ -34,12 +35,12 @@ export function ShoppingPage() {
 
   useEffect(() => {
     if (activeMudanca) {
-      api.get<Service[]>(`/services?mudanca_id=${activeMudanca.id}`).then(setServices).catch(() => {})
+      api.get<Service[]>(`/services?mudanca_id=${activeMudanca.id}`).then(setServices).catch(() => { })
     }
   }, [activeMudanca?.id])
 
   useEffect(() => {
-    api.get<string[]>('/shopping/suppliers').then(setSuppliers).catch(() => {})
+    api.get<string[]>('/shopping/suppliers').then(setSuppliers).catch(() => { })
   }, [])
 
   const toggleOnlyPending = () => {
@@ -90,16 +91,16 @@ export function ShoppingPage() {
 
       {/* Summary */}
       <Card className="!bg-primary-light border-primary/20">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-2 text-center divide-y divide-border sm:divide-y-0">
+          <div className="py-2">
             <p className="text-sm text-text-secondary">Estimado</p>
             <p className="text-lg font-bold text-text-primary">{formatCurrency(totalEstimated)}</p>
           </div>
-          <div>
+          <div className="py-2">
             <p className="text-sm text-text-secondary">Real</p>
             <p className="text-lg font-bold text-success">{formatCurrency(totalActual)}</p>
           </div>
-          <div>
+          <div className="py-2">
             <p className="text-sm text-text-secondary">Comprados</p>
             <p className="text-lg font-bold text-primary">{purchasedCount}/{items.length}</p>
           </div>
@@ -122,11 +123,10 @@ export function ShoppingPage() {
       {/* Filter chip */}
       <button
         onClick={toggleOnlyPending}
-        className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-colors ${
-          onlyPending
-            ? 'bg-primary border-primary text-white'
-            : 'bg-transparent border-primary text-primary'
-        }`}
+        className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-colors ${onlyPending
+          ? 'bg-primary border-primary text-white'
+          : 'bg-transparent border-primary text-primary'
+          }`}
       >
         A comprar
       </button>
@@ -214,7 +214,7 @@ export function ShoppingPage() {
               <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Tinta branca 18L" />
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Quantidade" type="number" value={newQuantity} onChange={e => setNewQuantity((e.target as HTMLInputElement).value)} min="1" step="1" />
-                <Input label="Preço Unit. Estimado (R$)" type="number" value={newEstimated} onChange={e => setNewEstimated((e.target as HTMLInputElement).value)} placeholder="0.00" step="0.01" />
+                <MoneyInput label="Preço Unit. Estimado" value={newEstimated} onChange={setNewEstimated} />
               </div>
               {services.length > 0 && (
                 <Select

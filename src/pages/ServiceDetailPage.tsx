@@ -115,13 +115,10 @@ export function ServiceDetailPage() {
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Valor (R$)"
-              type="number"
+            <MoneyInput
+              label="Valor"
               value={cost}
-              onChange={e => setCost((e.target as HTMLInputElement).value)}
-              step="0.01"
-              min="0"
+              onChange={setCost}
             />
             <Input
               label="Data Inicial"
