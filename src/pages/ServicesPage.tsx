@@ -4,6 +4,7 @@ import { useServices } from '../hooks/useServices'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { MoneyInput } from '../components/ui/MoneyInput'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -198,7 +199,7 @@ export function ServicesPage() {
           <h3 className="text-lg font-bold text-text-primary mb-3">Novo Serviço</h3>
           <div className="space-y-3">
             <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Pintura da sala" />
-            <Input label="Valor do Serviço (R$)" type="number" value={newCost} onChange={e => setNewCost((e.target as HTMLInputElement).value)} placeholder="0.00" step="0.01" />
+            <MoneyInput label="Valor do Serviço" value={newCost} onChange={setNewCost} placeholder="R$ 0,00" />
             <Input label="Materiais" value={newMaterials} onChange={e => setNewMaterials((e.target as HTMLInputElement).value)} placeholder="Lista de materiais necessários" multiline />
             <AutocompleteInput
               label="Prestador"

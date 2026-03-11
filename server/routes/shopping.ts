@@ -120,6 +120,7 @@ shopping.put('/:id', async (c) => {
     estimated_price?: number
     actual_price?: number | null
     purchased?: boolean
+    purchase_date?: string
     supplier?: string
   }>()
 
@@ -141,6 +142,7 @@ shopping.put('/:id', async (c) => {
       estimated_price = ?,
       actual_price = ?,
       purchased = ?,
+      purchase_date = ?,
       supplier = ?,
       updated_at = datetime('now')
     WHERE id = ?`
@@ -151,6 +153,7 @@ shopping.put('/:id', async (c) => {
     body.estimated_price ?? ex.estimated_price,
     body.actual_price !== undefined ? body.actual_price : ex.actual_price,
     body.purchased !== undefined ? (body.purchased ? 1 : 0) : ex.purchased,
+    body.purchase_date !== undefined ? body.purchase_date : ex.purchase_date,
     body.supplier ?? ex.supplier,
     id
   ).run()
@@ -182,7 +185,7 @@ shopping.delete('/:id', async (c) => {
 
 shopping.patch('/:id/purchased', async (c) => {
   const id = c.req.param('id')
-  const body = await c.req.json<{ actual_price?: number }>().catch(() => ({}))
+  const body = await c.req.json<{ actual_price?: number; purchase_date?: string }>().catch(() => ({}))
 
   const existing = await c.env.DB.prepare(
     'SELECT * FROM shopping_items WHERE id = ?'
@@ -197,9 +200,16 @@ shopping.patch('/:id/purchased', async (c) => {
     ? body.actual_price
     : (newPurchased === 0 ? null : existing.actual_price)
 
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+  const purchaseDate = newPurchased === 1
+    ? (body.purchase_date || existing.purchase_date || today)
+    : null
+
   await c.env.DB.prepare(
-    `UPDATE shopping_items SET purchased = ?, actual_price = ?, updated_at = datetime('now') WHERE id = ?`
-  ).bind(newPurchased, actualPrice, id).run()
+    `UPDATE shopping_items SET purchased = ?, actual_price = ?, purchase_date = ?, updated_at = datetime('now') WHERE id = ?`
+  ).bind(newPurchased, actualPrice, purchaseDate, id).run()
 
   const updated = await c.env.DB.prepare(
     `SELECT si.*, s.name as service_name

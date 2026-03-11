@@ -39,6 +39,7 @@ export type ShoppingItem = {
   estimated_price: number
   actual_price: number | null
   purchased: number
+  purchase_date?: string
   supplier: string
   created_at: string
   updated_at: string

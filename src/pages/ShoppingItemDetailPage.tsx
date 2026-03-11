@@ -29,9 +29,10 @@ export function ShoppingItemDetailPage() {
   const [supplier, setSupplier] = useState('')
   const [suppliers, setSuppliers] = useState<string[]>([])
   const [purchased, setPurchased] = useState(false)
+  const [purchaseDate, setPurchaseDate] = useState('')
 
   useEffect(() => {
-    api.get<string[]>('/shopping/suppliers').then(setSuppliers).catch(() => {})
+    api.get<string[]>('/shopping/suppliers').then(setSuppliers).catch(() => { })
   }, [])
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export function ShoppingItemDetailPage() {
         setServiceId(data.service_id ? String(data.service_id) : '')
         setSupplier(data.supplier || '')
         setPurchased(!!data.purchased)
+        setPurchaseDate(data.purchase_date || '')
         setServices(svcs)
       })
       .catch(() => navigate('/shopping', { replace: true }))
@@ -68,6 +70,7 @@ export function ShoppingItemDetailPage() {
         service_id: serviceId ? parseInt(serviceId) : null,
         supplier: supplier.trim(),
         purchased,
+        purchase_date: purchased && purchaseDate ? purchaseDate : undefined,
       })
       setItem(prev => prev ? { ...prev, ...updated } : null)
     } finally {
@@ -129,16 +132,6 @@ export function ShoppingItemDetailPage() {
             />
           </div>
 
-          <Input
-            label="Preço Unit. Real (R$)"
-            type="number"
-            value={actualPrice}
-            onChange={e => setActualPrice((e.target as HTMLInputElement).value)}
-            step="0.01"
-            min="0"
-            placeholder="Ainda não comprado"
-          />
-
           {services.length > 0 && (
             <Select
               label="Serviço"
@@ -163,7 +156,14 @@ export function ShoppingItemDetailPage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <button
               type="button"
-              onClick={() => setPurchased(p => !p)}
+              onClick={() => {
+                const isNowPurchased = !purchased
+                setPurchased(isNowPurchased)
+                if (isNowPurchased && !purchaseDate) {
+                  const now = new Date()
+                  setPurchaseDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`)
+                }
+              }}
               className={`w-7 h-7 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors
                 ${purchased ? 'bg-success border-success' : 'border-border hover:border-primary'}`}
             >
@@ -176,8 +176,40 @@ export function ShoppingItemDetailPage() {
             <span className="text-base text-text-primary font-medium">Comprado</span>
           </label>
 
+          {purchased && (
+            <div className="p-4 bg-primary-light border border-primary/20 rounded-lg space-y-4 animate-in fade-in slide-in-from-top-2">
+              <h3 className="text-sm font-semibold text-primary">Detalhes da Compra</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Data da Compra"
+                  type="date"
+                  value={purchaseDate}
+                  onChange={e => setPurchaseDate((e.target as HTMLInputElement).value)}
+                  required={purchased}
+                />
+                <Input
+                  label="Preço Unit. Real (R$)"
+                  type="number"
+                  value={actualPrice}
+                  onChange={e => setActualPrice((e.target as HTMLInputElement).value)}
+                  step="0.01"
+                  min="0"
+                  required={purchased}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3">
-            <Button type="submit" loading={saving} className="flex-1">Salvar</Button>
+            <Button
+              type="submit"
+              loading={saving}
+              className="flex-1"
+              disabled={purchased && (!actualPrice.trim() || !purchaseDate.trim())}
+            >
+              Salvar
+            </Button>
             <Button type="button" variant="danger" onClick={() => setShowDeleteConfirm(true)}>Excluir</Button>
           </div>
         </form>
