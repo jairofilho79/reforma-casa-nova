@@ -3,8 +3,28 @@ import type { Bindings, Variables } from '../types'
 
 const services = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
-async function ensureProviderId(c: { env: { DB: D1Database } }, mudancaId: number, providerId?: number | null, providerName?: string) {
-  if (providerId !== undefined) return providerId
+async function ensureProviderId(
+  c: { env: { DB: D1Database } },
+  mudancaId: number,
+  providerId: number | null | undefined,
+  providerName: string | undefined,
+  currentProviderId: number | null
+) {
+  if (providerId === undefined && providerName === undefined) return currentProviderId
+
+  if (providerId !== undefined) {
+    if (providerId === null) return null
+
+    const existing = await c.env.DB.prepare(
+      `SELECT id FROM providers WHERE id = ? AND mudanca_id = ?`
+    ).bind(providerId, mudancaId).first()
+
+    if (!existing) {
+      throw new Error('INVALID_PROVIDER_ID')
+    }
+    return providerId
+  }
+
   const name = (providerName || '').trim()
   if (!name) return null
 
@@ -110,7 +130,15 @@ services.post('/', async (c) => {
     return c.json({ error: 'mudanca_id é obrigatório' }, 400)
   }
 
-  const providerId = await ensureProviderId(c, body.mudanca_id, body.provider_id, body.provider)
+  let providerId: number | null
+  try {
+    providerId = await ensureProviderId(c, body.mudanca_id, body.provider_id, body.provider, null)
+  } catch (error) {
+    if (error instanceof Error && error.message === 'INVALID_PROVIDER_ID') {
+      return c.json({ error: 'provider_id inválido para esta mudança' }, 400)
+    }
+    throw error
+  }
 
   const result = await c.env.DB.prepare(
     `INSERT INTO services (mudanca_id, name, materials_description, service_cost, provider, provider_id)
@@ -158,7 +186,17 @@ services.put('/:id', async (c) => {
 
   const ex = existing as Record<string, unknown>
   const mudancaId = Number(ex.mudanca_id)
-  const providerId = await ensureProviderId(c, mudancaId, body.provider_id, body.provider)
+  const currentProviderId = ex.provider_id !== null ? Number(ex.provider_id) : null
+
+  let providerId: number | null
+  try {
+    providerId = await ensureProviderId(c, mudancaId, body.provider_id, body.provider, currentProviderId)
+  } catch (error) {
+    if (error instanceof Error && error.message === 'INVALID_PROVIDER_ID') {
+      return c.json({ error: 'provider_id inválido para esta mudança' }, 400)
+    }
+    throw error
+  }
 
   await c.env.DB.prepare(
     `UPDATE services SET

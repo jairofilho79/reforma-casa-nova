@@ -9,7 +9,11 @@ export function useProviders() {
   const [loading, setLoading] = useState(true)
 
   const fetchProviders = useCallback(async () => {
-    if (!activeMudanca) return
+    if (!activeMudanca) {
+      setProviders([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const data = await api.get<Provider[]>(`/providers?mudanca_id=${activeMudanca.id}`)
@@ -35,13 +39,15 @@ export function useProviders() {
   }
 
   const updateProvider = async (id: number, payload: Partial<Pick<Provider, 'name' | 'phone' | 'notes'>>) => {
-    const updated = await api.put<Provider>(`/providers/${id}`, payload)
+    if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
+    const updated = await api.put<Provider>(`/providers/${id}?mudanca_id=${activeMudanca.id}`, payload)
     setProviders(prev => prev.map(p => (p.id === id ? updated : p)).sort((a, b) => a.name.localeCompare(b.name)))
     return updated
   }
 
   const deleteProvider = async (id: number) => {
-    await api.delete(`/providers/${id}`)
+    if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
+    await api.delete(`/providers/${id}?mudanca_id=${activeMudanca.id}`)
     setProviders(prev => prev.filter(p => p.id !== id))
   }
 

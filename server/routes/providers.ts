@@ -12,9 +12,16 @@ function normalizePhoneBR(value: string) {
   return digits
 }
 
+function readMudancaId(raw: string | undefined): number | null {
+  if (!raw) return null
+  const parsed = Number(raw)
+  if (!Number.isInteger(parsed) || parsed <= 0) return null
+  return parsed
+}
+
 providers.get('/', async (c) => {
-  const mudancaId = c.req.query('mudanca_id')
-  if (!mudancaId) return c.json({ error: 'mudanca_id é obrigatório' }, 400)
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
 
   const { results } = await c.env.DB.prepare(
     `SELECT * FROM providers WHERE mudanca_id = ? ORDER BY name ASC`
@@ -64,15 +71,14 @@ providers.post('/', async (c) => {
 
 providers.get('/:id', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
 
   const provider = await c.env.DB.prepare(
-    `SELECT * FROM providers WHERE id = ?`
-  ).bind(id).first()
+    `SELECT * FROM providers WHERE id = ? AND mudanca_id = ?`
+  ).bind(id, mudancaId).first()
 
   if (!provider) return c.json({ error: 'Prestador não encontrado' }, 404)
-
-  const p = provider as Record<string, unknown>
-  const mudancaId = p.mudanca_id as number
 
   const { results: services } = await c.env.DB.prepare(
     `SELECT id, name, status, service_cost, start_date, end_date
@@ -121,11 +127,13 @@ providers.get('/:id', async (c) => {
 
 providers.put('/:id', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
   const body = await c.req.json<{ name?: string; phone?: string; notes?: string }>()
 
   const existing = await c.env.DB.prepare(
-    `SELECT * FROM providers WHERE id = ?`
-  ).bind(id).first()
+    `SELECT * FROM providers WHERE id = ? AND mudanca_id = ?`
+  ).bind(id, mudancaId).first()
 
   if (!existing) return c.json({ error: 'Prestador não encontrado' }, 404)
   const ex = existing as Record<string, unknown>
@@ -161,15 +169,17 @@ providers.put('/:id', async (c) => {
 
 providers.delete('/:id', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
 
   const existing = await c.env.DB.prepare(
-    `SELECT * FROM providers WHERE id = ?`
-  ).bind(id).first()
+    `SELECT * FROM providers WHERE id = ? AND mudanca_id = ?`
+  ).bind(id, mudancaId).first()
   if (!existing) return c.json({ error: 'Prestador não encontrado' }, 404)
 
   const { results: linked } = await c.env.DB.prepare(
-    `SELECT id FROM services WHERE provider_id = ? LIMIT 1`
-  ).bind(id).all()
+    `SELECT id FROM services WHERE provider_id = ? AND mudanca_id = ? LIMIT 1`
+  ).bind(id, mudancaId).all()
 
   if (linked.length > 0) {
     return c.json({ error: 'Não é possível excluir: há serviços vinculados' }, 400)
@@ -181,14 +191,15 @@ providers.delete('/:id', async (c) => {
 
 providers.post('/:id/payments', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
   const body = await c.req.json<{ payment_date: string; amount: number; notes?: string }>()
 
   const provider = await c.env.DB.prepare(
-    `SELECT * FROM providers WHERE id = ?`
-  ).bind(id).first()
+    `SELECT * FROM providers WHERE id = ? AND mudanca_id = ?`
+  ).bind(id, mudancaId).first()
 
   if (!provider) return c.json({ error: 'Prestador não encontrado' }, 404)
-  const p = provider as Record<string, unknown>
 
   if (!body.payment_date || !isValidDateYYYYMMDD(body.payment_date)) {
     return c.json({ error: 'Data do pagamento inválida' }, 400)
@@ -197,8 +208,6 @@ providers.post('/:id/payments', async (c) => {
   if (!Number.isFinite(amount) || amount <= 0) {
     return c.json({ error: 'Valor pago inválido' }, 400)
   }
-
-  const mudancaId = p.mudanca_id as number
 
   const result = await c.env.DB.prepare(
     `INSERT INTO provider_payments (mudanca_id, provider_id, payment_date, amount, notes)
