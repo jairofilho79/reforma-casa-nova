@@ -3,6 +3,13 @@ import type { Bindings, Variables } from '../types'
 
 const services = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
+function readMudancaId(raw: string | undefined): number | null {
+  if (!raw) return null
+  const parsed = Number(raw)
+  if (!Number.isInteger(parsed) || parsed <= 0) return null
+  return parsed
+}
+
 async function ensureProviderId(
   c: { env: { DB: D1Database } },
   mudancaId: number,
@@ -94,12 +101,17 @@ services.get('/providers', async (c) => {
 
 services.get('/:id', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
+  }
+
   const service = await c.env.DB.prepare(
     `SELECT s.*, p.name as provider_name
      FROM services s
      LEFT JOIN providers p ON s.provider_id = p.id
-     WHERE s.id = ?`
-  ).bind(id).first()
+     WHERE s.id = ? AND s.mudanca_id = ?`
+  ).bind(id, mudancaId).first()
 
   if (!service) {
     return c.json({ error: 'Serviço não encontrado' }, 404)
@@ -164,6 +176,10 @@ services.post('/', async (c) => {
 
 services.put('/:id', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
+  }
   const body = await c.req.json<{
     name?: string
     materials_description?: string
@@ -177,20 +193,20 @@ services.put('/:id', async (c) => {
   }>()
 
   const existing = await c.env.DB.prepare(
-    'SELECT * FROM services WHERE id = ?'
-  ).bind(id).first()
+    'SELECT * FROM services WHERE id = ? AND mudanca_id = ?'
+  ).bind(id, mudancaId).first()
 
   if (!existing) {
     return c.json({ error: 'Serviço não encontrado' }, 404)
   }
 
   const ex = existing as Record<string, unknown>
-  const mudancaId = Number(ex.mudanca_id)
+  const serviceMudancaId = Number(ex.mudanca_id)
   const currentProviderId = ex.provider_id !== null ? Number(ex.provider_id) : null
 
   let providerId: number | null
   try {
-    providerId = await ensureProviderId(c, mudancaId, body.provider_id, body.provider, currentProviderId)
+    providerId = await ensureProviderId(c, serviceMudancaId, body.provider_id, body.provider, currentProviderId)
   } catch (error) {
     if (error instanceof Error && error.message === 'INVALID_PROVIDER_ID') {
       return c.json({ error: 'provider_id inválido para esta mudança' }, 400)
@@ -210,7 +226,7 @@ services.put('/:id', async (c) => {
       provider = ?,
       provider_id = ?,
       updated_at = datetime('now')
-    WHERE id = ?`
+    WHERE id = ? AND mudanca_id = ?`
   ).bind(
     body.name ?? ex.name,
     body.materials_description ?? ex.materials_description,
@@ -221,49 +237,71 @@ services.put('/:id', async (c) => {
     body.end_date !== undefined ? body.end_date : ex.end_date,
     body.provider ?? ex.provider,
     providerId,
-    id
+    id,
+    mudancaId
   ).run()
 
   const updated = await c.env.DB.prepare(
     `SELECT s.*, p.name as provider_name
      FROM services s
      LEFT JOIN providers p ON s.provider_id = p.id
-     WHERE s.id = ?`
-  ).bind(id).first()
+     WHERE s.id = ? AND s.mudanca_id = ?`
+  ).bind(id, mudancaId).first()
 
   return c.json(updated)
 })
 
 services.delete('/:id', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
+  }
 
   const existing = await c.env.DB.prepare(
-    'SELECT id FROM services WHERE id = ?'
-  ).bind(id).first()
+    'SELECT id FROM services WHERE id = ? AND mudanca_id = ?'
+  ).bind(id, mudancaId).first()
 
   if (!existing) {
     return c.json({ error: 'Serviço não encontrado' }, 404)
   }
 
-  await c.env.DB.prepare('DELETE FROM services WHERE id = ?').bind(id).run()
+  await c.env.DB.prepare('DELETE FROM services WHERE id = ? AND mudanca_id = ?').bind(id, mudancaId).run()
   return c.json({ success: true })
 })
 
 services.patch('/:id/toggle', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
+  }
+
+  const existing = await c.env.DB.prepare(
+    'SELECT id FROM services WHERE id = ? AND mudanca_id = ?'
+  ).bind(id, mudancaId).first()
+
+  if (!existing) {
+    return c.json({ error: 'Serviço não encontrado' }, 404)
+  }
+
   await c.env.DB.prepare(
-    `UPDATE services SET selected = CASE WHEN selected = 1 THEN 0 ELSE 1 END, updated_at = datetime('now') WHERE id = ?`
-  ).bind(id).run()
+    `UPDATE services SET selected = CASE WHEN selected = 1 THEN 0 ELSE 1 END, updated_at = datetime('now') WHERE id = ? AND mudanca_id = ?`
+  ).bind(id, mudancaId).run()
 
   const updated = await c.env.DB.prepare(
-    'SELECT * FROM services WHERE id = ?'
-  ).bind(id).first()
+    'SELECT * FROM services WHERE id = ? AND mudanca_id = ?'
+  ).bind(id, mudancaId).first()
 
   return c.json(updated)
 })
 
 services.patch('/:id/status', async (c) => {
   const id = c.req.param('id')
+  const mudancaId = readMudancaId(c.req.query('mudanca_id'))
+  if (!mudancaId) {
+    return c.json({ error: 'mudanca_id válido é obrigatório' }, 400)
+  }
   const body = await c.req.json<{ status: string; start_date?: string; end_date?: string }>()
 
   if (!['pending', 'in_progress', 'completed'].includes(body.status)) {
@@ -271,8 +309,8 @@ services.patch('/:id/status', async (c) => {
   }
 
   const existing = await c.env.DB.prepare(
-    'SELECT * FROM services WHERE id = ?'
-  ).bind(id).first()
+    'SELECT * FROM services WHERE id = ? AND mudanca_id = ?'
+  ).bind(id, mudancaId).first()
 
   if (!existing) {
     return c.json({ error: 'Serviço não encontrado' }, 404)
@@ -281,17 +319,18 @@ services.patch('/:id/status', async (c) => {
   const ex = existing as Record<string, unknown>
 
   await c.env.DB.prepare(
-    `UPDATE services SET status = ?, start_date = ?, end_date = ?, updated_at = datetime('now') WHERE id = ?`
+    `UPDATE services SET status = ?, start_date = ?, end_date = ?, updated_at = datetime('now') WHERE id = ? AND mudanca_id = ?`
   ).bind(
     body.status,
     body.start_date !== undefined ? body.start_date : ex.start_date,
     body.end_date !== undefined ? body.end_date : ex.end_date,
-    id
+    id,
+    mudancaId
   ).run()
 
   const updated = await c.env.DB.prepare(
-    'SELECT * FROM services WHERE id = ?'
-  ).bind(id).first()
+    'SELECT * FROM services WHERE id = ? AND mudanca_id = ?'
+  ).bind(id, mudancaId).first()
 
   return c.json(updated)
 })

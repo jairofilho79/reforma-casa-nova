@@ -9,6 +9,7 @@ import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { formatCurrency } from '../lib/formatters'
 import { useProviders } from '../hooks/useProviders'
+import { useMudanca } from '../context/MudancaContext'
 import type { Service, ShoppingItem } from '@server/types'
 
 type ServiceWithItems = Service & { shopping_items: ShoppingItem[] }
@@ -16,6 +17,7 @@ type ServiceWithItems = Service & { shopping_items: ShoppingItem[] }
 export function ServiceDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { activeMudanca } = useMudanca()
   const { providers } = useProviders()
   const [service, setService] = useState<ServiceWithItems | null>(null)
   const [loading, setLoading] = useState(true)
@@ -32,7 +34,11 @@ export function ServiceDetailPage() {
   const [providerId, setProviderId] = useState('')
 
   useEffect(() => {
-    api.get<ServiceWithItems>(`/services/${id}`)
+    if (!activeMudanca || !id) {
+      setLoading(false)
+      return
+    }
+    api.get<ServiceWithItems>(`/services/${id}?mudanca_id=${activeMudanca.id}`)
       .then(data => {
         setService(data)
         setName(data.name)
@@ -45,14 +51,14 @@ export function ServiceDetailPage() {
       })
       .catch(() => navigate('/services', { replace: true }))
       .finally(() => setLoading(false))
-  }, [id, navigate])
+  }, [activeMudanca, id, navigate])
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim() || !activeMudanca) return
     setSaving(true)
     try {
-      const updated = await api.put<ServiceWithItems>(`/services/${id}`, {
+      const updated = await api.put<ServiceWithItems>(`/services/${id}?mudanca_id=${activeMudanca.id}`, {
         name: name.trim(),
         materials_description: materials.trim(),
         service_cost: parseFloat(cost) || 0,
@@ -68,8 +74,17 @@ export function ServiceDetailPage() {
   }
 
   const handleDelete = async () => {
-    await api.delete(`/services/${id}`)
+    if (!activeMudanca) return
+    await api.delete(`/services/${id}?mudanca_id=${activeMudanca.id}`)
     navigate('/services', { replace: true })
+  }
+
+  if (!activeMudanca) {
+    return (
+      <Card>
+        <p className="text-center text-text-secondary py-4">Selecione uma mudança no menu superior.</p>
+      </Card>
+    )
   }
 
   if (loading) {

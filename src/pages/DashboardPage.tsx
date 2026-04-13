@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../hooks/useDashboard'
 import { Card } from '../components/ui/Card'
-import { formatCurrency, formatHours } from '../lib/formatters'
+import { formatCurrency } from '../lib/formatters'
 
 export function DashboardPage() {
   const { data, loading } = useDashboard()
@@ -75,6 +75,33 @@ export function DashboardPage() {
             <p className="text-sm text-text-secondary">Concluídos</p>
           </div>
         </div>
+      </Card>
+
+      {/* Gastos por prestador (Top 5) */}
+      <Card>
+        <h3 className="text-lg font-bold text-text-primary mb-3">Gastos por Prestador (Top 5)</h3>
+        {(data.providers_summary ?? []).length === 0 ? (
+          <p className="text-center text-text-secondary text-base py-2">
+            Nenhum prestador com serviços ou pagamentos nesta mudança.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {(data.providers_summary ?? []).map(row => (
+              <button
+                key={row.provider_id}
+                type="button"
+                className="w-full text-left p-3 rounded-lg border border-border hover:border-primary transition-colors"
+                onClick={() => navigate(`/providers/${row.provider_id}`)}
+              >
+                <p className="text-base font-bold text-text-primary truncate">{row.name}</p>
+                <div className="flex justify-between gap-2 mt-2 text-sm">
+                  <span className="text-success font-semibold">Pago: {formatCurrency(row.total_paid)}</span>
+                  <span className="text-warning font-semibold">A pagar: {formatCurrency(row.total_pending)}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Shopping & Materials */}

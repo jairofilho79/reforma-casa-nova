@@ -81,7 +81,7 @@ providers.get('/:id', async (c) => {
   if (!provider) return c.json({ error: 'Prestador não encontrado' }, 404)
 
   const { results: services } = await c.env.DB.prepare(
-    `SELECT id, name, status, service_cost, start_date, end_date
+    `SELECT id, name, status, service_cost
      FROM services
      WHERE mudanca_id = ? AND provider_id = ?
      ORDER BY id ASC`

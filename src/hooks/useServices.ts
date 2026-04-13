@@ -35,18 +35,21 @@ export function useServices() {
   }
 
   const updateService = async (id: number, data: Partial<Service>) => {
-    const updated = await api.put<Service>(`/services/${id}`, data)
+    if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
+    const updated = await api.put<Service>(`/services/${id}?mudanca_id=${activeMudanca.id}`, data)
     setServices(prev => prev.map(s => s.id === id ? updated : s))
     return updated
   }
 
   const deleteService = async (id: number) => {
-    await api.delete(`/services/${id}`)
+    if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
+    await api.delete(`/services/${id}?mudanca_id=${activeMudanca.id}`)
     setServices(prev => prev.filter(s => s.id !== id))
   }
 
   const toggleSelected = async (id: number) => {
-    const updated = await api.patch<Service>(`/services/${id}/toggle`)
+    if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
+    const updated = await api.patch<Service>(`/services/${id}/toggle?mudanca_id=${activeMudanca.id}`)
     setServices(prev => prev.map(s => s.id === id ? updated : s))
   }
 
@@ -55,7 +58,8 @@ export function useServices() {
     if (start_date !== undefined) payload.start_date = start_date
     if (end_date !== undefined) payload.end_date = end_date
 
-    const updated = await api.patch<Service>(`/services/${id}/status`, payload)
+    if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
+    const updated = await api.patch<Service>(`/services/${id}/status?mudanca_id=${activeMudanca.id}`, payload)
     setServices(prev => prev.map(s => s.id === id ? updated : s))
   }
 

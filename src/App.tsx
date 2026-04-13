@@ -9,6 +9,8 @@ import { ServiceDetailPage } from './pages/ServiceDetailPage'
 import { ShoppingPage } from './pages/ShoppingPage'
 import { ShoppingItemDetailPage } from './pages/ShoppingItemDetailPage'
 import { AddMudancaPage } from './pages/AddMudancaPage'
+import { ProvidersPage } from './pages/ProvidersPage'
+import { ProviderDetailPage } from './pages/ProviderDetailPage'
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
               <Route path="/services/:id" element={<ServiceDetailPage />} />
               <Route path="/shopping" element={<ShoppingPage />} />
               <Route path="/shopping/:id" element={<ShoppingItemDetailPage />} />
+              <Route path="/providers" element={<ProvidersPage />} />
+              <Route path="/providers/:id" element={<ProviderDetailPage />} />
               <Route path="/mudancas/new" element={<AddMudancaPage />} />
             </Route>
           </Routes>

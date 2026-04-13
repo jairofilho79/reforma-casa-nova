@@ -41,6 +41,36 @@ dashboard.get('/', async (c) => {
   const totalBudget = (ss.total_cost_selected || 0) + (sh.total_estimated || 0)
   const totalSpent = sh.total_actual || 0
 
+  const { results: providerRows } = await c.env.DB.prepare(`
+    SELECT
+      p.id AS provider_id,
+      p.name AS name,
+      (SELECT COALESCE(SUM(service_cost), 0) FROM services WHERE mudanca_id = p.mudanca_id AND provider_id = p.id) AS total_combined,
+      (SELECT COALESCE(SUM(amount), 0) FROM provider_payments WHERE mudanca_id = p.mudanca_id AND provider_id = p.id) AS total_paid
+    FROM providers p
+    WHERE p.mudanca_id = ?
+  `).bind(mudancaId).all()
+
+  const providersSummary = (providerRows as Array<Record<string, unknown>>)
+    .map((row) => {
+      const combined = Number(row.total_combined) || 0
+      const paid = Number(row.total_paid) || 0
+      const pending = Math.max(0, combined - paid)
+      return {
+        provider_id: Number(row.provider_id),
+        name: String(row.name),
+        total_combined: combined,
+        total_paid: paid,
+        total_pending: pending,
+      }
+    })
+    .filter(row => row.total_combined > 0 || row.total_paid > 0)
+    .sort((a, b) => {
+      if (b.total_pending !== a.total_pending) return b.total_pending - a.total_pending
+      return b.total_combined - a.total_combined
+    })
+    .slice(0, 5)
+
   return c.json({
     budget: {
       total_service_cost: ss.total_cost_all || 0,
@@ -66,6 +96,7 @@ dashboard.get('/', async (c) => {
       purchased: sh.purchased_count || 0,
       pending: (sh.total_items || 0) - (sh.purchased_count || 0),
     },
+    providers_summary: providersSummary,
   })
 })
 
