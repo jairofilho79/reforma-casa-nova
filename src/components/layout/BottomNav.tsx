@@ -28,6 +28,18 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    to: '/providers',
+    label: 'Prestadores',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6" aria-hidden>
+        {/* Capacete de obra (estilo Lucide HardHat) */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 15v-3a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v3" />
+      </svg>
+    ),
+  },
 ]
 
 export function BottomNav() {
@@ -45,7 +57,7 @@ export function BottomNav() {
             }
           >
             {item.icon}
-            <span className="mt-0.5">{item.label}</span>
+            <span className="mt-0.5 text-xs leading-tight text-center">{item.label}</span>
           </NavLink>
         ))}
       </div>

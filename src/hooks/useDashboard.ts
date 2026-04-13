@@ -25,6 +25,13 @@ export type DashboardData = {
     purchased: number
     pending: number
   }
+  providers_summary: Array<{
+    provider_id: number
+    name: string
+    total_combined: number
+    total_paid: number
+    total_pending: number
+  }>
 }
 
 export function useDashboard() {
