@@ -8,6 +8,7 @@
     "preview": "wrangler pages dev dist",
     "db:migrate:local": "wrangler d1 execute reforma-casa-nova-db --local --file=./server/db/schema.sql",
     "db:migrate:local:0006": "wrangler d1 execute reforma-casa-nova-db --local --file=./migrations/0006_providers_and_payments.sql",
+    "db:migrate:local:alters": "wrangler d1 execute reforma-casa-nova-db --local --file=./migrations/0004_service_dates.sql && wrangler d1 execute reforma-casa-nova-db --local --file=./migrations/0005_shopping_date.sql && wrangler d1 execute reforma-casa-nova-db --local --file=./migrations/0006_providers_and_payments.sql",
     "db:seed:local": "node scripts/seed.js > /tmp/reforma-seed.sql && wrangler d1 execute reforma-casa-nova-db --local --file=/tmp/reforma-seed.sql",
     "db:migrate:remote": "wrangler d1 execute reforma-casa-nova-db --remote --file=./server/db/schema.sql",
     "db:migrate:remote:0006": "wrangler d1 execute reforma-casa-nova-db --remote --file=./migrations/0006_providers_and_payments.sql",
