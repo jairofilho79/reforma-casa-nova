@@ -7,8 +7,8 @@ import { Input } from '../components/ui/Input'
 import { MoneyInput } from '../components/ui/MoneyInput'
 import { Select } from '../components/ui/Select'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import { formatCurrency } from '../lib/formatters'
+import { useProviders } from '../hooks/useProviders'
 import type { Service, ShoppingItem } from '@server/types'
 
 type ServiceWithItems = Service & { shopping_items: ShoppingItem[] }
@@ -16,6 +16,7 @@ type ServiceWithItems = Service & { shopping_items: ShoppingItem[] }
 export function ServiceDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { providers } = useProviders()
   const [service, setService] = useState<ServiceWithItems | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -28,12 +29,7 @@ export function ServiceDetailPage() {
   const [status, setStatus] = useState('pending')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [provider, setProvider] = useState('')
-  const [providers, setProviders] = useState<string[]>([])
-
-  useEffect(() => {
-    api.get<string[]>('/services/providers').then(setProviders).catch(() => { })
-  }, [])
+  const [providerId, setProviderId] = useState('')
 
   useEffect(() => {
     api.get<ServiceWithItems>(`/services/${id}`)
@@ -45,7 +41,7 @@ export function ServiceDetailPage() {
         setStatus(data.status)
         setStartDate(data.start_date || '')
         setEndDate(data.end_date || '')
-        setProvider(data.provider || '')
+        setProviderId(data.provider_id ? String(data.provider_id) : '')
       })
       .catch(() => navigate('/services', { replace: true }))
       .finally(() => setLoading(false))
@@ -63,7 +59,7 @@ export function ServiceDetailPage() {
         status,
         start_date: startDate ? startDate : undefined,
         end_date: endDate ? endDate : undefined,
-        provider: provider.trim(),
+        provider_id: providerId ? parseInt(providerId) : null,
       })
       setService(prev => prev ? { ...prev, ...updated } : null)
     } finally {
@@ -157,12 +153,14 @@ export function ServiceDetailPage() {
             ]}
           />
 
-          <AutocompleteInput
+          <Select
             label="Prestador"
-            value={provider}
-            suggestions={providers}
-            onChange={setProvider}
-            placeholder="Ex: João Pedreiro"
+            value={providerId}
+            onChange={e => setProviderId(e.target.value)}
+            options={[
+              { value: '', label: 'Nenhum' },
+              ...providers.map(p => ({ value: String(p.id), label: p.name })),
+            ]}
           />
 
           <div className="flex gap-3">

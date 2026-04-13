@@ -20,6 +20,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (response.status === 401) {
     removeToken()
+    window.dispatchEvent(new Event('auth-changed'))
     window.location.href = '/login'
     throw new Error('Sessão expirada')
   }

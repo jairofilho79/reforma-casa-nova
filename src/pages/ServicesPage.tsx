@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useServices } from '../hooks/useServices'
+import { useProviders } from '../hooks/useProviders'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { MoneyInput } from '../components/ui/MoneyInput'
 import { StatusBadge } from '../components/ui/StatusBadge'
-import { AutocompleteInput } from '../components/ui/AutocompleteInput'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { formatCurrency } from '../lib/formatters'
-import { api } from '../lib/api'
+import { Select } from '../components/ui/Select'
 
 const nextStatus: Record<string, string> = {
   pending: 'in_progress',
@@ -19,19 +19,16 @@ const nextStatus: Record<string, string> = {
 
 export function ServicesPage() {
   const { services, loading, toggleSelected, updateStatus, createService, deleteService } = useServices()
+  const { providers } = useProviders()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [showAdd, setShowAdd] = useState(false)
   const [newName, setNewName] = useState('')
   const [newCost, setNewCost] = useState('')
   const [newMaterials, setNewMaterials] = useState('')
-  const [newProvider, setNewProvider] = useState('')
-  const [providers, setProviders] = useState<string[]>([])
+  const [newProviderId, setNewProviderId] = useState('')
   const [addLoading, setAddLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
-  useEffect(() => {
-    api.get<string[]>('/services/providers').then(setProviders).catch(() => { })
-  }, [])
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || '')
@@ -54,12 +51,12 @@ export function ServicesPage() {
         name: newName.trim(),
         service_cost: parseFloat(newCost) || 0,
         materials_description: newMaterials.trim(),
-        provider: newProvider.trim(),
+        provider_id: newProviderId ? parseInt(newProviderId) : null,
       })
       setNewName('')
       setNewCost('')
       setNewMaterials('')
-      setNewProvider('')
+      setNewProviderId('')
       setShowAdd(false)
     } finally {
       setAddLoading(false)
@@ -201,12 +198,14 @@ export function ServicesPage() {
             <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Pintura da sala" />
             <MoneyInput label="Valor do Serviço" value={newCost} onChange={setNewCost} placeholder="R$ 0,00" />
             <Input label="Materiais" value={newMaterials} onChange={e => setNewMaterials((e.target as HTMLInputElement).value)} placeholder="Lista de materiais necessários" multiline />
-            <AutocompleteInput
+            <Select
               label="Prestador"
-              value={newProvider}
-              suggestions={providers}
-              onChange={setNewProvider}
-              placeholder="Ex: João Pedreiro"
+              value={newProviderId}
+              onChange={e => setNewProviderId(e.target.value)}
+              options={[
+                { value: '', label: 'Nenhum' },
+                ...providers.map(p => ({ value: String(p.id), label: p.name })),
+              ]}
             />
             <div className="flex gap-3">
               <Button variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>

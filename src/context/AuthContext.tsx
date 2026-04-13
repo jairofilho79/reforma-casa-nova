@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .catch(() => {
           removeToken()
           setUser(null)
+          window.dispatchEvent(new Event('auth-changed'))
         })
         .finally(() => setIsLoading(false))
     }
@@ -42,11 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(data.token)
     setStoredUser(data.user)
     setUser(data.user)
+    window.dispatchEvent(new Event('auth-changed'))
   }, [])
 
   const logout = useCallback(() => {
     removeToken()
     setUser(null)
+    window.dispatchEvent(new Event('auth-changed'))
   }, [])
 
   return (

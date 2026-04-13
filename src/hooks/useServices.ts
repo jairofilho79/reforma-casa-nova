@@ -27,7 +27,7 @@ export function useServices() {
     fetchServices()
   }, [fetchServices])
 
-  const createService = async (data: { name: string; materials_description?: string; service_cost?: number; provider?: string }) => {
+  const createService = async (data: { name: string; materials_description?: string; service_cost?: number; provider_id?: number | null; provider?: string }) => {
     if (!activeMudanca) throw new Error('Nenhuma mudança ativa')
     const service = await api.post<Service>('/services', { ...data, mudanca_id: activeMudanca.id })
     setServices(prev => [...prev, service])

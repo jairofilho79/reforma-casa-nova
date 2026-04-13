@@ -26,7 +26,10 @@ export function MudancaProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchMudancas = useCallback(async () => {
+    setIsLoading(true)
     if (!getToken()) {
+      setMudancas([])
+      setActiveMudancaId(null)
       setIsLoading(false)
       return
     }
@@ -52,6 +55,12 @@ export function MudancaProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchMudancas()
+  }, [fetchMudancas])
+
+  useEffect(() => {
+    const handler = () => fetchMudancas()
+    window.addEventListener('auth-changed', handler)
+    return () => window.removeEventListener('auth-changed', handler)
   }, [fetchMudancas])
 
   const switchMudanca = useCallback((id: number) => {
