@@ -25,8 +25,29 @@ export type Service = {
   start_date?: string
   end_date?: string
   provider: string
+  provider_id: number | null
   created_at: string
   updated_at: string
+}
+
+export type Provider = {
+  id: number
+  mudanca_id: number
+  name: string
+  phone: string
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
+export type ProviderPayment = {
+  id: number
+  mudanca_id: number
+  provider_id: number
+  payment_date: string
+  amount: number
+  notes: string
+  created_at: string
 }
 
 export type ShoppingItem = {

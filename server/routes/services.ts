@@ -3,6 +3,24 @@ import type { Bindings, Variables } from '../types'
 
 const services = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
+async function ensureProviderId(c: { env: { DB: D1Database } }, mudancaId: number, providerId?: number | null, providerName?: string) {
+  if (providerId !== undefined) return providerId
+  const name = (providerName || '').trim()
+  if (!name) return null
+
+  try {
+    const result = await c.env.DB.prepare(
+      `INSERT INTO providers (mudanca_id, name) VALUES (?, ?)`
+    ).bind(mudancaId, name).run()
+    return Number(result.meta.last_row_id)
+  } catch {
+    const existing = await c.env.DB.prepare(
+      `SELECT id FROM providers WHERE mudanca_id = ? AND name = ?`
+    ).bind(mudancaId, name).first() as Record<string, unknown> | null
+    return existing ? Number(existing.id) : null
+  }
+}
+
 services.get('/summary', async (c) => {
   const mudancaId = c.req.query('mudanca_id')
   if (!mudancaId) {
@@ -38,16 +56,29 @@ services.get('/', async (c) => {
 })
 
 services.get('/providers', async (c) => {
+  // Legacy endpoint kept for UI autocomplete compatibility.
+  // Now returns provider names from providers table.
+  const mudancaId = c.req.query('mudanca_id')
+  if (mudancaId) {
+    const { results } = await c.env.DB.prepare(
+      `SELECT name FROM providers WHERE mudanca_id = ? ORDER BY name ASC`
+    ).bind(mudancaId).all()
+    return c.json(results.map((r: Record<string, unknown>) => r.name as string))
+  }
+
   const { results } = await c.env.DB.prepare(
-    `SELECT DISTINCT provider FROM services WHERE provider != '' ORDER BY provider ASC`
+    `SELECT DISTINCT name FROM providers ORDER BY name ASC`
   ).all()
-  return c.json(results.map((r: Record<string, unknown>) => r.provider as string))
+  return c.json(results.map((r: Record<string, unknown>) => r.name as string))
 })
 
 services.get('/:id', async (c) => {
   const id = c.req.param('id')
   const service = await c.env.DB.prepare(
-    'SELECT * FROM services WHERE id = ?'
+    `SELECT s.*, p.name as provider_name
+     FROM services s
+     LEFT JOIN providers p ON s.provider_id = p.id
+     WHERE s.id = ?`
   ).bind(id).first()
 
   if (!service) {
@@ -68,6 +99,7 @@ services.post('/', async (c) => {
     materials_description?: string
     service_cost?: number
     provider?: string
+    provider_id?: number | null
   }>()
 
   if (!body.name) {
@@ -78,19 +110,25 @@ services.post('/', async (c) => {
     return c.json({ error: 'mudanca_id é obrigatório' }, 400)
   }
 
+  const providerId = await ensureProviderId(c, body.mudanca_id, body.provider_id, body.provider)
+
   const result = await c.env.DB.prepare(
-    `INSERT INTO services (mudanca_id, name, materials_description, service_cost, provider)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO services (mudanca_id, name, materials_description, service_cost, provider, provider_id)
+     VALUES (?, ?, ?, ?, ?, ?)`
   ).bind(
     body.mudanca_id,
     body.name,
     body.materials_description || '',
     body.service_cost || 0,
-    body.provider || ''
+    body.provider || '',
+    providerId
   ).run()
 
   const service = await c.env.DB.prepare(
-    'SELECT * FROM services WHERE id = ?'
+    `SELECT s.*, p.name as provider_name
+     FROM services s
+     LEFT JOIN providers p ON s.provider_id = p.id
+     WHERE s.id = ?`
   ).bind(result.meta.last_row_id).first()
 
   return c.json(service, 201)
@@ -107,6 +145,7 @@ services.put('/:id', async (c) => {
     start_date?: string
     end_date?: string
     provider?: string
+    provider_id?: number | null
   }>()
 
   const existing = await c.env.DB.prepare(
@@ -118,6 +157,8 @@ services.put('/:id', async (c) => {
   }
 
   const ex = existing as Record<string, unknown>
+  const mudancaId = Number(ex.mudanca_id)
+  const providerId = await ensureProviderId(c, mudancaId, body.provider_id, body.provider)
 
   await c.env.DB.prepare(
     `UPDATE services SET
@@ -129,6 +170,7 @@ services.put('/:id', async (c) => {
       start_date = ?,
       end_date = ?,
       provider = ?,
+      provider_id = ?,
       updated_at = datetime('now')
     WHERE id = ?`
   ).bind(
@@ -140,11 +182,15 @@ services.put('/:id', async (c) => {
     body.start_date !== undefined ? body.start_date : ex.start_date,
     body.end_date !== undefined ? body.end_date : ex.end_date,
     body.provider ?? ex.provider,
+    providerId,
     id
   ).run()
 
   const updated = await c.env.DB.prepare(
-    'SELECT * FROM services WHERE id = ?'
+    `SELECT s.*, p.name as provider_name
+     FROM services s
+     LEFT JOIN providers p ON s.provider_id = p.id
+     WHERE s.id = ?`
   ).bind(id).first()
 
   return c.json(updated)
