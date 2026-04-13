@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useServices } from '../hooks/useServices'
 import { useProviders } from '../hooks/useProviders'
@@ -29,9 +29,20 @@ export function ServicesPage() {
   const [newProviderId, setNewProviderId] = useState('')
   const [addLoading, setAddLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const addFormRef = useRef<HTMLDivElement | null>(null)
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || '')
+
+  useEffect(() => {
+    if (!showAdd) return
+
+    const frameId = requestAnimationFrame(() => {
+      addFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+
+    return () => cancelAnimationFrame(frameId)
+  }, [showAdd])
 
   const filtered = services.filter(s => {
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false
@@ -192,27 +203,29 @@ export function ServicesPage() {
 
       {/* Add Form */}
       {showAdd && (
-        <Card>
-          <h3 className="text-lg font-bold text-text-primary mb-3">Novo Serviço</h3>
-          <div className="space-y-3">
-            <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Pintura da sala" />
-            <MoneyInput label="Valor do Serviço" value={newCost} onChange={setNewCost} placeholder="R$ 0,00" />
-            <Input label="Materiais" value={newMaterials} onChange={e => setNewMaterials((e.target as HTMLInputElement).value)} placeholder="Lista de materiais necessários" multiline />
-            <Select
-              label="Prestador"
-              value={newProviderId}
-              onChange={e => setNewProviderId(e.target.value)}
-              options={[
-                { value: '', label: 'Nenhum' },
-                ...providers.map(p => ({ value: String(p.id), label: p.name })),
-              ]}
-            />
-            <div className="flex gap-3">
-              <Button variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>
-              <Button onClick={handleAdd} loading={addLoading} className="flex-1">Salvar</Button>
+        <div ref={addFormRef}>
+          <Card>
+            <h3 className="text-lg font-bold text-text-primary mb-3">Novo Serviço</h3>
+            <div className="space-y-3">
+              <Input label="Nome" value={newName} onChange={e => setNewName((e.target as HTMLInputElement).value)} placeholder="Ex: Pintura da sala" />
+              <MoneyInput label="Valor do Serviço" value={newCost} onChange={setNewCost} placeholder="R$ 0,00" />
+              <Input label="Materiais" value={newMaterials} onChange={e => setNewMaterials((e.target as HTMLInputElement).value)} placeholder="Lista de materiais necessários" multiline />
+              <Select
+                label="Prestador"
+                value={newProviderId}
+                onChange={e => setNewProviderId(e.target.value)}
+                options={[
+                  { value: '', label: 'Nenhum' },
+                  ...providers.map(p => ({ value: String(p.id), label: p.name })),
+                ]}
+              />
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>
+                <Button onClick={handleAdd} loading={addLoading} className="flex-1">Salvar</Button>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       )}
 
       {/* FAB */}
